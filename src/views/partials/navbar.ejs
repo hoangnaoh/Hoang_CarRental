@@ -1,0 +1,126 @@
+<nav class="navbar">
+    <div class="container nav-inner">
+        <a href="/" class="nav-brand">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg>
+            CARRENTAL
+        </a>
+        <ul class="nav-menu">
+            <li><a href="/" class="<%= page==='home'?'active':'' %>">Trang chủ</a></li>
+            <li><a href="/cars" class="<%= page==='cars'?'active':'' %>">Danh sách xe</a></li>
+            <li><a href="/services">Dịch vụ</a></li>
+            <li><a href="/contact">Liên hệ</a></li>
+        </ul>
+        <div class="nav-actions">
+            <% if (typeof user !== 'undefined' && user) { %>
+                <div class="user-menu">
+                    <button class="user-toggle" type="button">
+                        <div class="avatar-sm"><%= user.fullName.charAt(0).toUpperCase() %></div>
+                        <span><%= user.fullName.split(' ').pop() %></span>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                    <div class="user-dropdown">
+                        <div class="dropdown-header">
+                            <div class="avatar-md"><%= user.fullName.charAt(0).toUpperCase() %></div>
+                            <div>
+                                <div class="dropdown-name"><%= user.fullName %></div>
+                                <div class="dropdown-email"><%= user.email %></div>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="/my-bookings" class="dropdown-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            Đặt xe của tôi
+                        </a>
+                        <a href="/profile" class="dropdown-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Tài khoản
+                        </a>
+                        <% if (user.role === 'admin') { %>
+                        <a href="/admin" class="dropdown-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            Quản trị
+                        </a>
+                        <% } %>
+                        <div class="dropdown-divider"></div>
+                        <a href="/logout" class="dropdown-item dropdown-item-danger">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Đăng xuất
+                        </a>
+                    </div>
+                </div>
+            <% } else { %>
+                <a href="/login" class="btn btn-outline">Đăng nhập</a>
+                <a href="/register" class="btn btn-primary">Đăng ký</a>
+            <% } %>
+        </div>
+    </div>
+</nav>
+
+<style>
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+}
+.avatar-md {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.dropdown-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.dropdown-email {
+    font-size: 12px;
+    color: #94a3b8;
+}
+.dropdown-divider {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 4px 0;
+}
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    font-size: 14px;
+    color: #374151;
+    text-decoration: none;
+    transition: background .15s;
+}
+.dropdown-item:hover {
+    background: #f8fafc;
+    color: #2563eb;
+}
+.dropdown-item-danger {
+    color: #ef4444 !important;
+}
+.dropdown-item-danger:hover {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+}
+</style>
+
+<script>
+document.querySelector('.user-toggle')?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.querySelector('.user-dropdown').classList.toggle('show');
+});
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.user-menu')) {
+        document.querySelector('.user-dropdown')?.classList.remove('show');
+    }
+});
+</script>

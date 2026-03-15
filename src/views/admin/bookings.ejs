@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quan ly don dat xe - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background .15s, transform .1s;
+            background: transparent;
+        }
+        .icon-btn:hover { transform: scale(1.1); }
+        .icon-btn.view    { background: #eff6ff; color: #2563eb; }
+        .icon-btn.approve { background: #dcfce7; color: #16a34a; }
+        .icon-btn.start   { background: #fef3c7; color: #d97706; }
+        .icon-btn.done    { background: #e0e7ff; color: #4f46e5; }
+        .icon-btn.cancel  { background: #fee2e2; color: #dc2626; }
+        .icon-btn svg { width: 16px; height: 16px; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 20px;
+            width: 560px;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            animation: slideUp .2s ease;
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform:translateY(20px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .modal-head {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-head h3 { font-size: 17px; font-weight: 700; color: #1e293b; margin: 0; }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: #f1f5f9; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: #64748b; font-size: 18px; line-height: 1;
+        }
+        .modal-close:hover { background: #e2e8f0; }
+        .modal-body { padding: 20px 24px 24px; }
+
+        .detail-section { margin-bottom: 20px; }
+        .detail-section-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .8px; color: #94a3b8; margin-bottom: 10px;
+        }
+        .detail-row {
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 8px 0;
+            border-bottom: 1px solid #f8fafc;
+            font-size: 13px;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-row .label { color: #64748b; }
+        .detail-row .value { font-weight: 600; color: #1e293b; text-align: right; }
+        .detail-total {
+            background: #eff6ff; border-radius: 10px; padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 12px;
+        }
+        .detail-total .label { font-weight: 600; color: #1e40af; font-size: 14px; }
+        .detail-total .value { font-size: 20px; font-weight: 800; color: #2563eb; }
+
+        .modal-actions {
+            padding: 16px 24px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .modal-btn {
+            flex: 1; min-width: 100px;
+            padding: 10px 16px; border-radius: 10px; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: opacity .15s;
+        }
+        .modal-btn:hover { opacity: .85; }
+        .modal-btn.approve { background: #16a34a; color: #fff; }
+        .modal-btn.start   { background: #d97706; color: #fff; }
+        .modal-btn.done    { background: #4f46e5; color: #fff; }
+        .modal-btn.cancel  { background: #dc2626; color: #fff; }
+        .modal-btn.neutral { background: #f1f5f9; color: #475569; }
+
+        .car-thumb {
+            width: 100%; height: 160px; object-fit: cover;
+            border-radius: 10px; margin-bottom: 12px;
+        }
+        .car-thumb-placeholder {
+            width: 100%; height: 160px; background: #f1f5f9;
+            border-radius: 10px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body class="admin-body">
+
+<%- include('../partials/admin-sidebar', { user, adminPage: 'bookings' }) %>
+
+<div class="admin-content">
+    <div class="page-head">
+        <div>
+            <h1>Quan Ly Don Dat Xe</h1>
+            <p>Duyet, xac nhan va quan ly trang thai don thue xe.</p>
+        </div>
+    </div>
+
+    <form class="filter-bar" action="/admin/bookings" method="GET">
+        <select name="status" id="statusFilter">
+            <option value="">Tat ca trang thai</option>
+            <option value="pending"   <%= query.status==='pending'   ?'selected':'' %>>Cho duyet</option>
+            <option value="confirmed" <%= query.status==='confirmed' ?'selected':'' %>>Da xac nhan</option>
+            <option value="active"    <%= query.status==='active'    ?'selected':'' %>>Dang thue</option>
+            <option value="completed" <%= query.status==='completed' ?'selected':'' %>>Hoan thanh</option>
+            <option value="cancelled" <%= query.status==='cancelled' ?'selected':'' %>>Da huy</option>
+        </select>
+        <button type="submit" class="btn btn-outline">Loc</button>
+    </form>
+
+    <div class="admin-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ma don</th>
+                    <th>Khach hang</th>
+                    <th>Xe</th>
+                    <th>Thoi gian</th>
+                    <th>Tong tien</th>
+                    <th>Trang thai</th>
+                    <th style="text-align:center">Thao tac</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (bookings.length === 0) { %>
+                    <tr><td colspan="7" class="text-center" style="padding:40px;color:#94a3b8">Khong co don dat xe nao.</td></tr>
+                <% } %>
+                <% bookings.forEach(function(b) {
+                    var days = Math.max(1, Math.ceil(
+                        (new Date(b.endDate) - new Date(b.startDate)) / (1000*60*60*24)
+                    ));
+                    var total = b.totalAmount || (b.car ? b.car.pricePerDay * days : 0);
+                    var carImg = (b.car && b.car.images && b.car.images.length > 0) ? b.car.images[0] : '';
+                %>
+                <tr>
+                    <td><span style="font-size:12px;font-weight:600;color:#64748b">#<%= String(b._id).slice(-8).toUpperCase() %></span></td>
+                    <td>
+                        <div style="font-weight:600;font-size:13px"><%= b.customer ? b.customer.fullName : '—' %></div>
+                        <div style="font-size:11px;color:#94a3b8"><%= b.customer ? b.customer.email : '' %></div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;font-size:13px"><%= b.car ? b.car.name : '—' %></div>
+                        <div style="font-size:11px;color:#94a3b8"><%= b.car ? b.car.licensePlate : '' %></div>
+                    </td>
+                    <td>
+                        <div style="font-size:12px"><%= new Date(b.startDate).toLocaleDateString('vi-VN') %> &rarr; <%= new Date(b.endDate).toLocaleDateString('vi-VN') %></div>
+                        <div style="font-size:11px;color:#94a3b8"><%= days %> ngay</div>
+                    </td>
+                    <td style="font-weight:700;color:#2563eb"><%= Number(total).toLocaleString('vi-VN') %>d</td>
+                    <td><%- statusBadge(b.status) %></td>
+                    <td>
+                        <div style="display:flex;gap:6px;justify-content:center;align-items:center"
+                             data-booking='<%- JSON.stringify({
+                                id: b._id,
+                                code: String(b._id).slice(-8).toUpperCase(),
+                                status: b.status,
+                                customerName: b.customer ? b.customer.fullName : "",
+                                customerEmail: b.customer ? b.customer.email : "",
+                                customerPhone: b.customer ? (b.customer.phone||"") : "",
+                                carName: b.car ? b.car.name : "",
+                                carPlate: b.car ? b.car.licensePlate : "",
+                                carImg: carImg,
+                                startDate: b.startDate,
+                                endDate: b.endDate,
+                                days: days,
+                                total: total,
+                                note: b.customerNote || ""
+                             }) %>'>
+
+                            <!-- Nut xem chi tiet -->
+                            <button class="icon-btn view btn-view-detail" title="Xem chi tiet">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+
+                            <% if (b.status === 'pending') { %>
+                                <button class="icon-btn approve btn-status" data-id="<%= b._id %>" data-status="confirmed" title="Duyet don">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                </button>
+                                <button class="icon-btn cancel btn-status" data-id="<%= b._id %>" data-status="cancelled" title="Huy don">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            <% } else if (b.status === 'confirmed') { %>
+                                <button class="icon-btn start btn-status" data-id="<%= b._id %>" data-status="active" title="Bat dau cho thue">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                </button>
+                                <button class="icon-btn cancel btn-status" data-id="<%= b._id %>" data-status="cancelled" title="Huy don">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            <% } else if (b.status === 'active') { %>
+                                <button class="icon-btn done btn-status" data-id="<%= b._id %>" data-status="completed" title="Hoan thanh">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                                </button>
+                            <% } %>
+                        </div>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+        <div class="table-foot">
+            <span>Hien thi <%= Math.min((currentPage-1)*limit+1, total) %> den <%= Math.min(currentPage*limit, total) %> trong so <%= total %> don</span>
+            <% if (totalPages > 1) { %>
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage-1 %>&status=<%= query.status||'' %>" class="page-btn">&#8592;</a>
+                <% } %>
+                <% for(var i=1; i<=totalPages; i++) { %>
+                    <% if (i===currentPage) { %>
+                        <span class="page-btn active"><%= i %></span>
+                    <% } else { %>
+                        <a href="?page=<%= i %>&status=<%= query.status||'' %>" class="page-btn"><%= i %></a>
+                    <% } %>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage+1 %>&status=<%= query.status||'' %>" class="page-btn">&#8594;</a>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chi tiet don -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3 id="modalTitle">Chi tiet don dat xe</h3>
+            <button class="modal-close" id="modalCloseBtn">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+            <img id="modalCarImg" class="car-thumb" src="" alt="" style="display:none">
+            <div id="modalCarImgPlaceholder" class="car-thumb-placeholder">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/>
+                    <rect x="9" y="11" width="14" height="10" rx="2"/>
+                    <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                </svg>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Thong tin xe</div>
+                <div class="detail-row"><span class="label">Ten xe</span><span class="value" id="dCarName">—</span></div>
+                <div class="detail-row"><span class="label">Bien so</span><span class="value" id="dCarPlate">—</span></div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Khach hang</div>
+                <div class="detail-row"><span class="label">Ho ten</span><span class="value" id="dCusName">—</span></div>
+                <div class="detail-row"><span class="label">Email</span><span class="value" id="dCusEmail">—</span></div>
+                <div class="detail-row"><span class="label">Dien thoai</span><span class="value" id="dCusPhone">—</span></div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">Thoi gian thue</div>
+                <div class="detail-row"><span class="label">Ngay nhan</span><span class="value" id="dStart">—</span></div>
+                <div class="detail-row"><span class="label">Ngay tra</span><span class="value" id="dEnd">—</span></div>
+                <div class="detail-row"><span class="label">So ngay</span><span class="value" id="dDays">—</span></div>
+            </div>
+
+            <div id="dNoteWrap" class="detail-section" style="display:none">
+                <div class="detail-section-title">Ghi chu khach hang</div>
+                <div style="font-size:13px;color:#475569;background:#f8fafc;border-radius:8px;padding:10px 12px" id="dNote"></div>
+            </div>
+
+            <div class="detail-total">
+                <span class="label">Tong tien</span>
+                <span class="value" id="dTotal">—</span>
+            </div>
+        </div>
+        <div class="modal-actions" id="modalActions"></div>
+    </div>
+</div>
+
+<form id="statusForm" action="" method="POST" style="display:none">
+    <input type="hidden" name="status" id="statusInput">
+</form>
+
+<script>
+(function () {
+    var currentBooking = null;
+
+    /* ── Auto-submit filter ── */
+    document.getElementById('statusFilter').addEventListener('change', function () {
+        this.form.submit();
+    });
+
+    /* ── Mo modal chi tiet ── */
+    document.querySelectorAll('.btn-view-detail').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var wrap = this.closest('[data-booking]');
+            var b    = JSON.parse(wrap.getAttribute('data-booking'));
+            currentBooking = b;
+            openModal(b);
+        });
+    });
+
+    function openModal(b) {
+        document.getElementById('modalTitle').textContent = 'Don #' + b.code;
+
+        /* Anh xe */
+        var imgEl   = document.getElementById('modalCarImg');
+        var imgPh   = document.getElementById('modalCarImgPlaceholder');
+        if (b.carImg) {
+            imgEl.src = b.carImg;
+            imgEl.style.display  = 'block';
+            imgPh.style.display  = 'none';
+            imgEl.onerror = function () {
+                imgEl.style.display = 'none';
+                imgPh.style.display = 'flex';
+            };
+        } else {
+            imgEl.style.display = 'none';
+            imgPh.style.display = 'flex';
+        }
+
+        document.getElementById('dCarName').textContent  = b.carName  || '—';
+        document.getElementById('dCarPlate').textContent = b.carPlate || '—';
+        document.getElementById('dCusName').textContent  = b.customerName  || '—';
+        document.getElementById('dCusEmail').textContent = b.customerEmail || '—';
+        document.getElementById('dCusPhone').textContent = b.customerPhone || '—';
+
+        var fmt = function (d) { return new Date(d).toLocaleDateString('vi-VN'); };
+        document.getElementById('dStart').textContent = fmt(b.startDate);
+        document.getElementById('dEnd').textContent   = fmt(b.endDate);
+        document.getElementById('dDays').textContent  = b.days + ' ngay';
+        document.getElementById('dTotal').textContent = Number(b.total).toLocaleString('vi-VN') + 'd';
+
+        if (b.note) {
+            document.getElementById('dNote').textContent    = b.note;
+            document.getElementById('dNoteWrap').style.display = 'block';
+        } else {
+            document.getElementById('dNoteWrap').style.display = 'none';
+        }
+
+        /* Nut hanh dong */
+        var actEl = document.getElementById('modalActions');
+        actEl.innerHTML = '';
+
+        var closeBtn = makeBtn('neutral', 'Dong', 'M6 18L18 6M6 6l12 12');
+        closeBtn.addEventListener('click', closeModal);
+        actEl.appendChild(closeBtn);
+
+        if (b.status === 'pending') {
+            var apBtn = makeBtn('approve', 'Duyet don', 'M20 6L9 17l-5-5');
+            apBtn.addEventListener('click', function () { doStatus(b.id, 'confirmed'); });
+            var cnBtn = makeBtn('cancel', 'Huy don', 'M18 6L6 18M6 6l12 12');
+            cnBtn.addEventListener('click', function () { doStatus(b.id, 'cancelled'); });
+            actEl.appendChild(apBtn);
+            actEl.appendChild(cnBtn);
+        } else if (b.status === 'confirmed') {
+            var stBtn = makeBtn('start', 'Bat dau thue', 'M5 3l14 9-14 9V3z');
+            stBtn.addEventListener('click', function () { doStatus(b.id, 'active'); });
+            var cnBtn2 = makeBtn('cancel', 'Huy don', 'M18 6L6 18M6 6l12 12');
+            cnBtn2.addEventListener('click', function () { doStatus(b.id, 'cancelled'); });
+            actEl.appendChild(stBtn);
+            actEl.appendChild(cnBtn2);
+        } else if (b.status === 'active') {
+            var doneBtn = makeBtn('done', 'Hoan thanh', 'M9 11l3 3L22 4');
+            doneBtn.addEventListener('click', function () { doStatus(b.id, 'completed'); });
+            actEl.appendChild(doneBtn);
+        }
+
+        document.getElementById('detailModal').classList.add('open');
+    }
+
+    function makeBtn(cls, text, svgPath) {
+        var btn = document.createElement('button');
+        btn.className = 'modal-btn ' + cls;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="' + svgPath + '"/></svg>' + text;
+        return btn;
+    }
+
+    function closeModal() {
+        document.getElementById('detailModal').classList.remove('open');
+    }
+
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('detailModal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+
+    /* ── Nut status truc tiep tren bang ── */
+    document.querySelectorAll('.btn-status').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var id     = this.getAttribute('data-id');
+            var status = this.getAttribute('data-status');
+            doStatus(id, status);
+        });
+    });
+
+    function doStatus(id, status) {
+        var labels = { confirmed:'duyet don', cancelled:'huy don', active:'bat dau thue', completed:'hoan thanh don' };
+        if (!confirm('Ban co chac muon ' + (labels[status]||status) + '?')) return;
+        var form = document.getElementById('statusForm');
+        form.action = '/admin/bookings/' + id;
+        document.getElementById('statusInput').value = status;
+        form.submit();
+    }
+})();
+</script>
+
+</body>
+</html>

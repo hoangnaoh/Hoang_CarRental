@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký – CarRental</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body.auth-page {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-wrap {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+            max-width: 960px;
+            min-height: 620px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,.15);
+        }
+
+        .auth-left {
+            position: relative;
+            background:
+                linear-gradient(160deg, rgba(15,23,42,.75) 0%, rgba(15,23,42,.4) 55%, rgba(124,58,237,.4) 100%),
+                url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=900&q=80&fit=crop') center/cover no-repeat;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px;
+        }
+
+        .auth-left-body { position: relative; z-index: 1; }
+
+        .auth-left h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.25;
+            margin-bottom: 12px;
+        }
+
+        .auth-left p {
+            font-size: 14px;
+            color: rgba(255,255,255,.75);
+            line-height: 1.65;
+            margin-bottom: 24px;
+            max-width: 340px;
+        }
+
+        .tagline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,.5);
+            text-transform: uppercase;
+        }
+        .tagline span {
+            display: block;
+            width: 32px;
+            height: 2px;
+            background: #7c3aed;
+            border-radius: 2px;
+        }
+
+        .auth-right {
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 36px 44px;
+        }
+
+        .auth-box { width: 100%; max-width: 360px; }
+
+        .auth-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+        }
+
+        .auth-box h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .auth-sub {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .alert-error   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="email"],
+        .form-group input[type="text"],
+        .form-group input[type="tel"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1e293b;
+            outline: none;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .form-group input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+        }
+
+        /* 2 cột họ tên + sdt */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* Password wrapper */
+        .pw-wrap { position: relative; }
+        .pw-wrap input { padding-right: 44px; }
+        .pw-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            transition: color .15s;
+        }
+        .pw-toggle:hover { color: #2563eb; }
+        .pw-toggle svg { width: 18px; height: 18px; }
+        .pw-toggle .eye-off { display: none; }
+        .pw-toggle.showing .eye-on  { display: none; }
+        .pw-toggle.showing .eye-off { display: block; }
+
+        /* Strength bar */
+        .pw-strength { display: flex; gap: 4px; margin-top: 6px; }
+        .pw-strength-bar {
+            flex: 1; height: 3px; border-radius: 3px;
+            background: #e2e8f0; transition: background .25s;
+        }
+        .pw-strength-label {
+            font-size: 11px; color: #94a3b8; margin-top: 3px; text-align: right;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            margin-top: 6px;
+            transition: background .15s, transform .1s;
+        }
+        .btn-block:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .btn-block:active { transform: translateY(0); }
+
+        .auth-switch {
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 18px;
+        }
+        .auth-switch a { color: #2563eb; font-weight: 600; text-decoration: none; }
+        .auth-switch a:hover { text-decoration: underline; }
+
+        .auth-copy {
+            text-align: center;
+            font-size: 11px;
+            color: #cbd5e1;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .auth-wrap { grid-template-columns: 1fr; }
+            .auth-left  { display: none; }
+            .auth-right { padding: 32px 24px; }
+            .form-row   { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="auth-page">
+
+<div class="auth-wrap">
+
+    <!-- Cột trái: ảnh -->
+    <div class="auth-left">
+        <div class="auth-left-body">
+            <h2>Tham gia cùng<br>hàng nghìn khách hàng</h2>
+            <p>Đăng ký để trải nghiệm dịch vụ thuê xe chất lượng cao, đặt xe nhanh chóng và nhận ưu đãi hấp dẫn.</p>
+            <div class="tagline"><span></span>JOIN THE JOURNEY</div>
+        </div>
+    </div>
+
+    <!-- Cột phải: form -->
+    <div class="auth-right">
+        <div class="auth-box">
+            <div class="auth-brand">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5">
+                    <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/>
+                    <rect x="9" y="11" width="14" height="10" rx="2"/>
+                    <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                </svg>
+                LuxCar Rental
+            </div>
+
+            <h1>Tạo tài khoản mới</h1>
+            <p class="auth-sub">Điền thông tin bên dưới để bắt đầu.</p>
+
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-error"><%= error %></div>
+            <% } %>
+
+            <form action="/register" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Họ và tên</label>
+                        <input type="text" name="fullName" placeholder="Nguyễn Văn A" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input type="tel" name="phone" placeholder="0901 234 567">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="name@gmail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <div class="pw-wrap">
+                        <input type="password" name="password" id="regPw"
+                            placeholder="Ít nhất 6 ký tự" required minlength="6">
+                        <button type="button" class="pw-toggle" id="regPwToggle" title="Ẩn/hiện mật khẩu">
+                            <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                                <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Thanh độ mạnh mật khẩu -->
+                    <div class="pw-strength">
+                        <div class="pw-strength-bar" id="sb1"></div>
+                        <div class="pw-strength-bar" id="sb2"></div>
+                        <div class="pw-strength-bar" id="sb3"></div>
+                        <div class="pw-strength-bar" id="sb4"></div>
+                    </div>
+                    <div class="pw-strength-label" id="pwLabel"></div>
+                </div>
+
+                <button type="submit" class="btn-block">Đăng ký</button>
+            </form>
+
+            <p class="auth-switch">Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+            <p class="auth-copy">© 2025 LuxCar Rental. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    /* Toggle mật khẩu */
+    var btn = document.getElementById('regPwToggle');
+    var inp = document.getElementById('regPw');
+    if (btn && inp) {
+        btn.addEventListener('click', function () {
+            var showing = inp.type === 'text';
+            inp.type = showing ? 'password' : 'text';
+            btn.classList.toggle('showing', !showing);
+        });
+    }
+
+    /* Độ mạnh mật khẩu */
+    var bars   = ['sb1','sb2','sb3','sb4'].map(function(id){ return document.getElementById(id); });
+    var label  = document.getElementById('pwLabel');
+    var colors = ['#ef4444','#f97316','#eab308','#22c55e'];
+    var levels = ['Rất yếu','Yếu','Trung bình','Mạnh'];
+
+    function strength(pw) {
+        if (!pw) return 0;
+        var score = 0;
+        if (pw.length >= 6)  score++;
+        if (pw.length >= 10) score++;
+        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+        if (/[0-9]/.test(pw) && /[^A-Za-z0-9]/.test(pw)) score++;
+        return score;
+    }
+
+    if (inp) {
+        inp.addEventListener('input', function () {
+            var s = strength(this.value);
+            bars.forEach(function(bar, i) {
+                bar.style.background = (this.value && i < s) ? colors[s - 1] : '#e2e8f0';
+            }.bind(this));
+            label.textContent = this.value ? levels[s - 1] || '' : '';
+            label.style.color = this.value ? colors[s - 1] : '#94a3b8';
+        });
+    }
+})();
+</script>
+
+</body>
+</html>

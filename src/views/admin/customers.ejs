@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quan ly khach hang - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .icon-btn {
+            display:inline-flex;align-items:center;justify-content:center;
+            width:32px;height:32px;border-radius:8px;border:none;
+            cursor:pointer;transition:background .15s,transform .1s;
+        }
+        .icon-btn:hover { transform:scale(1.1); }
+        .icon-btn.lock   { background:#fee2e2;color:#dc2626; }
+        .icon-btn.unlock { background:#dcfce7;color:#16a34a; }
+        .icon-btn.view   { background:#eff6ff;color:#2563eb; }
+        .icon-btn svg { width:16px;height:16px; }
+
+        .avatar-circle {
+            width:38px;height:38px;border-radius:50%;
+            background:linear-gradient(135deg,#2563eb,#7c3aed);
+            color:#fff;display:flex;align-items:center;justify-content:center;
+            font-weight:700;font-size:15px;flex-shrink:0;
+        }
+
+        .modal-overlay {
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,.45);z-index:1000;
+            align-items:center;justify-content:center;
+        }
+        .modal-overlay.open { display:flex; }
+        .modal-box {
+            background:#fff;border-radius:20px;width:480px;
+            max-width:95vw;max-height:90vh;overflow-y:auto;
+            box-shadow:0 20px 60px rgba(0,0,0,.2);
+            animation:slideUp .2s ease;
+        }
+        @keyframes slideUp {
+            from{opacity:0;transform:translateY(20px);}
+            to{opacity:1;transform:translateY(0);}
+        }
+        .modal-head {
+            padding:20px 24px 16px;border-bottom:1px solid #f1f5f9;
+            display:flex;align-items:center;justify-content:space-between;
+        }
+        .modal-head h3 { font-size:17px;font-weight:700;color:#1e293b;margin:0; }
+        .modal-close {
+            width:32px;height:32px;border-radius:8px;background:#f1f5f9;
+            border:none;cursor:pointer;display:flex;align-items:center;
+            justify-content:center;color:#64748b;font-size:18px;
+        }
+        .modal-close:hover { background:#e2e8f0; }
+        .modal-body { padding:20px 24px 24px; }
+        .modal-profile {
+            display:flex;align-items:center;gap:14px;margin-bottom:20px;
+            background:#f8fafc;border-radius:12px;padding:16px;
+        }
+        .modal-avatar {
+            width:54px;height:54px;border-radius:50%;
+            background:linear-gradient(135deg,#2563eb,#7c3aed);
+            color:#fff;display:flex;align-items:center;justify-content:center;
+            font-weight:800;font-size:22px;flex-shrink:0;
+        }
+        .modal-profile .name  { font-size:16px;font-weight:700;color:#1e293b; }
+        .modal-profile .email { font-size:13px;color:#64748b;margin-top:2px; }
+        .detail-row {
+            display:flex;justify-content:space-between;align-items:center;
+            padding:9px 0;border-bottom:1px solid #f8fafc;font-size:13px;
+        }
+        .detail-row:last-child { border-bottom:none; }
+        .detail-row .lbl { color:#64748b; }
+        .detail-row .val { font-weight:600;color:#1e293b; }
+        .modal-actions {
+            padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;gap:10px;
+        }
+        .modal-btn {
+            flex:1;padding:10px 16px;border-radius:10px;border:none;
+            font-size:13px;font-weight:600;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;gap:6px;
+        }
+        .modal-btn.lock-btn   { background:#fee2e2;color:#dc2626; }
+        .modal-btn.unlock-btn { background:#dcfce7;color:#16a34a; }
+        .modal-btn.neutral    { background:#f1f5f9;color:#475569; }
+
+        .pagination { display:flex;gap:4px; }
+        .page-btn {
+            min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+            border-radius:6px;font-size:13px;font-weight:500;color:#475569;
+            background:#f1f5f9;text-decoration:none;border:none;cursor:pointer;
+        }
+        .page-btn:hover { background:#e2e8f0; }
+        .page-btn.active { background:#2563eb;color:#fff; }
+    </style>
+</head>
+<body class="admin-body">
+
+<%- include('../partials/admin-sidebar', { user, adminPage: 'customers' }) %>
+
+<div class="admin-content">
+    <div class="page-head">
+        <div>
+            <h1>Quản Lý Khách Hàng</h1>
+            <p>Danh sách tài khoản và lịch sử đặt xe của khách hàng.</p>
+        </div>
+    </div>
+
+    <form class="filter-bar" action="/admin/customers" method="GET">
+        <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" name="search" placeholder="Tìm theo tên hoặc email..."
+                value="<%= query.search || '' %>">
+        </div>
+        <button type="submit" class="btn btn-outline">Tìm</button>
+    </form>
+
+    <div class="admin-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Số điện thoại</th>
+                    <th>Ngày đăng ký</th>
+                    <th>Số đơn</th>
+                    <th>Trạng thái</th>
+                    <th style="text-align:center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (customers.length === 0) { %>
+                    <tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8">Không tìm thấy khách hàng nào.</td></tr>
+                <% } %>
+                <% customers.forEach(function(c) { %>
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div class="avatar-circle">
+                                <%= c.fullName ? c.fullName.charAt(0).toUpperCase() : '?' %>
+                            </div>
+                            <div>
+                                <div style="font-weight:600;font-size:13px"><%= c.fullName %></div>
+                                <div style="font-size:11px;color:#94a3b8"><%= c.email %></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:13px"><%= c.phone || '—' %></td>
+                    <td style="font-size:12px;color:#64748b"><%= new Date(c.createdAt).toLocaleDateString('vi-VN') %></td>
+                    <td>
+                        <span style="background:#eff6ff;color:#2563eb;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">
+                            <%= c.bookingCount || 0 %> đơn
+                        </span>
+                    </td>
+                    <td>
+                        <% if (c.isActive !== false) { %>
+                            <span style="background:#dcfce7;color:#166534;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Hoạt động</span>
+                        <% } else { %>
+                            <span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600">Đã khóa</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;justify-content:center"
+                             data-cid="<%= c._id %>"
+                             data-name="<%= c.fullName %>"
+                             data-email="<%= c.email %>"
+                             data-phone="<%= c.phone || '' %>"
+                             data-created="<%= c.createdAt %>"
+                             data-active="<%= c.isActive !== false %>"
+                             data-bookings="<%= c.bookingCount || 0 %>">
+                            <button class="icon-btn view btn-view-customer" title="Xem chi tiết">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                            <% if (c.isActive !== false) { %>
+                                <button class="icon-btn lock btn-toggle"
+                                    data-id="<%= c._id %>" data-active="true" title="Khóa tài khoản">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                                    </svg>
+                                </button>
+                            <% } else { %>
+                                <button class="icon-btn unlock btn-toggle"
+                                    data-id="<%= c._id %>" data-active="false" title="Mở khóa">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                        <path d="M7 11V7a5 5 0 019.9-1"/>
+                                    </svg>
+                                </button>
+                            <% } %>
+                        </div>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+        <div class="table-foot">
+            <span>Hiển thị <%= Math.min((currentPage-1)*limit+1, total) %> đến <%= Math.min(currentPage*limit, total) %> trong số <%= total %> khách hàng</span>
+            <% if (totalPages > 1) { %>
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage-1 %>&search=<%= query.search||'' %>" class="page-btn">&#8592;</a>
+                <% } %>
+                <% for(var i=1; i<=totalPages; i++) { %>
+                    <% if (i===currentPage) { %>
+                        <span class="page-btn active"><%= i %></span>
+                    <% } else { %>
+                        <a href="?page=<%= i %>&search=<%= query.search||'' %>" class="page-btn"><%= i %></a>
+                    <% } %>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage+1 %>&search=<%= query.search||'' %>" class="page-btn">&#8594;</a>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chi tiết khách hàng -->
+<div class="modal-overlay" id="customerModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3>Chi tiết khách hàng</h3>
+            <button class="modal-close" id="cusModalClose">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-profile">
+                <div class="modal-avatar" id="mAvatar">?</div>
+                <div>
+                    <div class="name"  id="mName">—</div>
+                    <div class="email" id="mEmail">—</div>
+                </div>
+            </div>
+            <div class="detail-row"><span class="lbl">Số điện thoại</span><span class="val" id="mPhone">—</span></div>
+            <div class="detail-row"><span class="lbl">Ngày đăng ký</span> <span class="val" id="mCreated">—</span></div>
+            <div class="detail-row"><span class="lbl">Số đơn đặt xe</span><span class="val" id="mBookings">—</span></div>
+            <div class="detail-row"><span class="lbl">Trạng thái</span>   <span class="val" id="mStatus">—</span></div>
+        </div>
+        <div class="modal-actions" id="cusModalActions"></div>
+    </div>
+</div>
+
+<form id="toggleForm" action="" method="POST" style="display:none">
+    <input type="hidden" name="isActive" id="isActiveInput">
+</form>
+
+<script>
+(function () {
+    /* Mở modal chi tiết */
+    document.querySelectorAll('.btn-view-customer').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var wrap     = this.closest('[data-cid]');
+            var isActive = wrap.getAttribute('data-active') === 'true';
+            var c = {
+                id:       wrap.getAttribute('data-cid'),
+                fullName: wrap.getAttribute('data-name'),
+                email:    wrap.getAttribute('data-email'),
+                phone:    wrap.getAttribute('data-phone'),
+                created:  wrap.getAttribute('data-created'),
+                isActive: isActive,
+                bookings: wrap.getAttribute('data-bookings')
+            };
+            openModal(c);
+        });
+    });
+
+    function openModal(c) {
+        var initial = c.fullName ? c.fullName.charAt(0).toUpperCase() : '?';
+        document.getElementById('mAvatar').textContent   = initial;
+        document.getElementById('mName').textContent     = c.fullName || '—';
+        document.getElementById('mEmail').textContent    = c.email    || '—';
+        document.getElementById('mPhone').textContent    = c.phone    || '—';
+        document.getElementById('mCreated').textContent  = new Date(c.created).toLocaleDateString('vi-VN');
+        document.getElementById('mBookings').textContent = c.bookings + ' đơn';
+        document.getElementById('mStatus').innerHTML     = c.isActive
+            ? '<span style="background:#dcfce7;color:#166534;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">Hoạt động</span>'
+            : '<span style="background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600">Đã khóa</span>';
+
+        var actEl = document.getElementById('cusModalActions');
+        actEl.innerHTML = '';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.className   = 'modal-btn neutral';
+        closeBtn.textContent = 'Đóng';
+        closeBtn.addEventListener('click', closeModal);
+        actEl.appendChild(closeBtn);
+
+        var toggleBtn = document.createElement('button');
+        if (c.isActive) {
+            toggleBtn.className   = 'modal-btn lock-btn';
+            toggleBtn.textContent = 'Khóa tài khoản';
+        } else {
+            toggleBtn.className   = 'modal-btn unlock-btn';
+            toggleBtn.textContent = 'Mở khóa tài khoản';
+        }
+        toggleBtn.addEventListener('click', function () { doToggle(c.id, c.isActive); });
+        actEl.appendChild(toggleBtn);
+
+        document.getElementById('customerModal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('customerModal').classList.remove('open');
+    }
+    document.getElementById('cusModalClose').addEventListener('click', closeModal);
+    document.getElementById('customerModal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+
+    /* Toggle trực tiếp trên bảng */
+    document.querySelectorAll('.btn-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            doToggle(this.getAttribute('data-id'), this.getAttribute('data-active') === 'true');
+        });
+    });
+
+    function doToggle(id, isActive) {
+        var action = isActive ? 'khóa' : 'mở khóa';
+        if (!confirm('Bạn có chắc muốn ' + action + ' tài khoản này?')) return;
+        document.getElementById('toggleForm').action = '/admin/customers/' + id + '/toggle';
+        document.getElementById('isActiveInput').value = (!isActive).toString();
+        document.getElementById('toggleForm').submit();
+    }
+})();
+</script>
+
+</body>
+</html>

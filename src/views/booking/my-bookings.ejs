@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dat xe cua toi - CarRental</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .my-bookings-wrap { max-width: 900px; margin: 40px auto 60px; padding: 0 20px; }
+        .page-title { font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+        .page-sub   { font-size: 14px; color: #94a3b8; margin-bottom: 28px; }
+        .booking-list { display: flex; flex-direction: column; gap: 16px; }
+
+        .booking-item {
+            background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px;
+            padding: 20px; display: grid; grid-template-columns: 110px 1fr auto;
+            gap: 20px; align-items: center; cursor: pointer;
+            transition: box-shadow .15s, border-color .15s, transform .12s;
+        }
+        .booking-item:hover {
+            box-shadow: 0 6px 24px rgba(37,99,235,.1);
+            border-color: #bfdbfe; transform: translateY(-2px);
+        }
+        @media (max-width: 600px) { .booking-item { grid-template-columns: 1fr; } }
+
+        .booking-car-img { width:110px;height:76px;border-radius:10px;overflow:hidden;background:#f1f5f9;flex-shrink:0; }
+        .booking-car-img img { width:100%;height:100%;object-fit:cover; }
+        .booking-car-img .no-img { width:100%;height:100%;display:flex;align-items:center;justify-content:center; }
+        .booking-car-name { font-size:16px;font-weight:700;color:#1e293b;margin-bottom:4px; }
+        .booking-car-sub  { font-size:13px;color:#94a3b8;margin-bottom:10px; }
+        .booking-dates    { display:flex;align-items:center;gap:8px;font-size:13px;color:#64748b; }
+        .booking-dates .date-tag { background:#f1f5f9;border-radius:6px;padding:4px 10px;font-weight:500; }
+        .booking-dates .arrow { color:#cbd5e1; }
+        .booking-right { text-align:right; }
+        .booking-total { font-size:18px;font-weight:800;color:#2563eb;margin-bottom:8px; }
+        .booking-total span { font-size:12px;font-weight:400;color:#94a3b8; }
+        .booking-id { font-size:11px;color:#cbd5e1;margin-top:6px; }
+        .click-hint { font-size:11px;color:#bfdbfe;margin-top:8px;display:flex;align-items:center;justify-content:flex-end;gap:4px; }
+
+        .badge-pending   { background:#fef9c3;color:#854d0e;  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600; }
+        .badge-confirmed { background:#dbeafe;color:#1e40af;  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600; }
+        .badge-active    { background:#dcfce7;color:#166534;  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600; }
+        .badge-completed { background:#f1f5f9;color:#475569;  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600; }
+        .badge-cancelled { background:#fee2e2;color:#991b1b;  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600; }
+
+        .empty-bookings { text-align:center;padding:60px 20px;color:#94a3b8; }
+        .empty-bookings svg { margin-bottom:16px; }
+        .empty-bookings p { font-size:15px;margin-bottom:20px; }
+        .breadcrumb { max-width:900px;margin:20px auto 0;padding:0 20px;font-size:13px;color:#94a3b8; }
+        .breadcrumb a { color:#2563eb;text-decoration:none; }
+        .breadcrumb a:hover { text-decoration:underline; }
+
+        /* Modal */
+        .modal-overlay {
+            display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+            z-index:1000;align-items:center;justify-content:center;padding:20px;
+        }
+        .modal-overlay.open { display:flex; }
+        .modal-box {
+            background:#fff;border-radius:20px;width:560px;max-width:100%;
+            max-height:90vh;overflow-y:auto;
+            box-shadow:0 24px 64px rgba(0,0,0,.2);animation:popUp .18s ease;
+        }
+        @keyframes popUp {
+            from { opacity:0;transform:scale(.95) translateY(12px); }
+            to   { opacity:1;transform:scale(1)   translateY(0); }
+        }
+        .modal-head {
+            padding:20px 24px 16px;border-bottom:1px solid #f1f5f9;
+            display:flex;align-items:center;justify-content:space-between;
+            position:sticky;top:0;background:#fff;z-index:1;
+        }
+        .modal-head-left { display:flex;align-items:center;gap:8px; }
+        .modal-head h3 { font-size:17px;font-weight:700;color:#1e293b;margin:0; }
+        .modal-close {
+            width:32px;height:32px;border-radius:8px;background:#f1f5f9;border:none;
+            cursor:pointer;font-size:18px;color:#64748b;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .modal-close:hover { background:#e2e8f0; }
+        .modal-body { padding:0 24px 24px; }
+
+        .modal-gallery { width:100%;height:200px;object-fit:cover;border-radius:0 0 12px 12px;margin-bottom:20px;display:block; }
+        .modal-gallery-ph {
+            width:100%;height:200px;background:#f1f5f9;
+            border-radius:0 0 12px 12px;margin-bottom:20px;
+            display:flex;align-items:center;justify-content:center;
+        }
+
+        /* Timeline */
+        .status-timeline { display:flex;align-items:flex-start;margin:16px 0 20px;overflow-x:auto; }
+        .st-step { display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px;position:relative; }
+        .st-step:not(:last-child)::after {
+            content:'';position:absolute;top:13px;left:55%;width:90%;height:2px;
+            background:#e2e8f0;z-index:0;
+        }
+        .st-step.done:not(:last-child)::after { background:#2563eb; }
+        .st-dot {
+            width:26px;height:26px;border-radius:50%;border:2px solid #e2e8f0;
+            background:#fff;display:flex;align-items:center;justify-content:center;
+            font-size:11px;font-weight:700;position:relative;z-index:1;
+        }
+        .st-step.done .st-dot    { background:#2563eb;border-color:#2563eb;color:#fff; }
+        .st-step.current .st-dot { background:#fff;border-color:#2563eb;color:#2563eb;box-shadow:0 0 0 3px #bfdbfe; }
+        .st-step.cancelled .st-dot { background:#fee2e2;border-color:#dc2626;color:#dc2626; }
+        .st-label { font-size:10px;color:#94a3b8;margin-top:6px;font-weight:500;text-align:center; }
+        .st-step.done .st-label    { color:#2563eb;font-weight:600; }
+        .st-step.current .st-label { color:#1e293b;font-weight:700; }
+
+        .msec { margin-bottom:16px; }
+        .msec-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:8px; }
+        .mrow { display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f8fafc;font-size:13px; }
+        .mrow:last-child { border-bottom:none; }
+        .mrow .lbl { color:#64748b; }
+        .mrow .val { font-weight:600;color:#1e293b;text-align:right; }
+        .mtotal {
+            background:#eff6ff;border-radius:12px;padding:14px 16px;
+            display:flex;justify-content:space-between;align-items:center;margin-top:14px;
+        }
+        .mtotal .lbl { font-size:14px;font-weight:600;color:#1e40af; }
+        .mtotal .val { font-size:22px;font-weight:800;color:#2563eb; }
+
+        .modal-footer { padding:16px 24px;border-top:1px solid #f1f5f9;display:flex;gap:10px; }
+        .mbtn {
+            flex:1;padding:11px 14px;border-radius:10px;border:none;
+            font-size:13px;font-weight:600;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;gap:6px;
+            transition:opacity .15s;
+        }
+        .mbtn:hover { opacity:.85; }
+        .mbtn.close-btn  { background:#f1f5f9;color:#475569; }
+        .mbtn.cancel-btn { background:#fee2e2;color:#dc2626; }
+    </style>
+</head>
+<body>
+
+<%- include('../partials/navbar', { page: '', user: user }) %>
+
+<div class="breadcrumb">
+    <a href="/">Trang chu</a> &rsaquo; Dat xe cua toi
+</div>
+
+<div class="my-bookings-wrap">
+    <div class="page-title">Dat xe cua toi</div>
+    <div class="page-sub">Click vao don de xem chi tiet va quan ly don thue xe</div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+        <div style="background:#dcfce7;color:#166534;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;font-weight:600">
+            &#x2713; Dat xe thanh cong! Chung toi se lien he xac nhan som.
+        </div>
+    <% } %>
+
+    <% if (bookings.length === 0) { %>
+        <div class="empty-bookings">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="13" x2="15" y2="13"/>
+                <line x1="9" y1="17" x2="11" y2="17"/>
+            </svg>
+            <p>Ban chua co don dat xe nao.</p>
+            <a href="/cars" class="btn btn-primary">Thue xe ngay</a>
+        </div>
+    <% } else { %>
+        <div class="booking-list">
+            <% bookings.forEach(function(booking) {
+                var days = Math.max(1, Math.ceil(
+                    (new Date(booking.endDate) - new Date(booking.startDate)) / (1000*60*60*24)
+                ));
+                var total  = booking.totalAmount || (booking.car ? booking.car.pricePerDay * days : 0);
+                var carImg = (booking.car && booking.car.images && booking.car.images.length > 0) ? booking.car.images[0] : '';
+                var bData  = encodeURIComponent(JSON.stringify({
+                    id:       booking._id,
+                    code:     String(booking._id).slice(-8).toUpperCase(),
+                    status:   booking.status,
+                    carName:  booking.car ? booking.car.name         : '',
+                    carBrand: booking.car ? booking.car.brand        : '',
+                    carType:  booking.car ? booking.car.type         : '',
+                    carPlate: booking.car ? booking.car.licensePlate : '',
+                    carSeats: booking.car ? booking.car.seats        : '',
+                    carImg:   carImg,
+                    startDate: booking.startDate,
+                    endDate:   booking.endDate,
+                    days:  days,
+                    total: total,
+                    note:  booking.customerNote || ''
+                }));
+            %>
+            <div class="booking-item" data-b="<%= bData %>">
+                <div class="booking-car-img">
+                    <% if (carImg) { %>
+                        <img src="<%= carImg %>" alt="" class="bimg">
+                    <% } else { %>
+                        <div class="no-img">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                                <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/>
+                                <rect x="9" y="11" width="14" height="10" rx="2"/>
+                                <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                            </svg>
+                        </div>
+                    <% } %>
+                </div>
+
+                <div class="booking-info">
+                    <div class="booking-car-name"><%= booking.car ? booking.car.name : 'Xe khong ton tai' %></div>
+                    <div class="booking-car-sub"><%= booking.car ? (booking.car.type + ' - ' + booking.car.brand) : '' %></div>
+                    <div class="booking-dates">
+                        <span class="date-tag"><%= new Date(booking.startDate).toLocaleDateString('vi-VN') %></span>
+                        <span class="arrow">&rarr;</span>
+                        <span class="date-tag"><%= new Date(booking.endDate).toLocaleDateString('vi-VN') %></span>
+                    </div>
+                </div>
+
+                <div class="booking-right">
+                    <%- statusBadge(booking.status) %>
+                    <div class="booking-total" style="margin-top:10px">
+                        <%= Number(total).toLocaleString('vi-VN') %>d
+                        <span>(<%= days %> ngay)</span>
+                    </div>
+                    <div class="booking-id">#<%= String(booking._id).slice(-8).toUpperCase() %></div>
+                    <div class="click-hint">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Xem chi tiet
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Modal -->
+<div class="modal-overlay" id="bModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <div class="modal-head-left">
+                <h3 id="mTitle">Chi tiet don</h3>
+                <span id="mBadge"></span>
+            </div>
+            <button class="modal-close" id="mClose">&#x2715;</button>
+        </div>
+
+        <img id="mImg" class="modal-gallery" src="" alt="" style="display:none">
+        <div id="mImgPh" class="modal-gallery-ph">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/>
+                <rect x="9" y="11" width="14" height="10" rx="2"/>
+                <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            </svg>
+        </div>
+
+        <div class="modal-body">
+            <div class="status-timeline" id="mTimeline"></div>
+
+            <div class="msec">
+                <div class="msec-title">Thong tin xe</div>
+                <div class="mrow"><span class="lbl">Ten xe</span>  <span class="val" id="mCarName">—</span></div>
+                <div class="mrow"><span class="lbl">Hang xe</span> <span class="val" id="mCarBrand">—</span></div>
+                <div class="mrow"><span class="lbl">Loai xe</span> <span class="val" id="mCarType">—</span></div>
+                <div class="mrow"><span class="lbl">Bien so</span> <span class="val" id="mCarPlate">—</span></div>
+                <div class="mrow"><span class="lbl">So cho</span>  <span class="val" id="mCarSeats">—</span></div>
+            </div>
+
+            <div class="msec">
+                <div class="msec-title">Thoi gian thue</div>
+                <div class="mrow"><span class="lbl">Nhan xe</span>      <span class="val" id="mStart">—</span></div>
+                <div class="mrow"><span class="lbl">Tra xe</span>       <span class="val" id="mEnd">—</span></div>
+                <div class="mrow"><span class="lbl">So ngay thue</span> <span class="val" id="mDays">—</span></div>
+            </div>
+
+            <div class="msec" id="mNoteWrap" style="display:none">
+                <div class="msec-title">Ghi chu</div>
+                <div style="background:#f8fafc;border-radius:8px;padding:10px 12px;font-size:13px;color:#475569" id="mNote"></div>
+            </div>
+
+            <div class="mtotal">
+                <span class="lbl">Tong tien</span>
+                <span class="val" id="mTotal">—</span>
+            </div>
+        </div>
+        <div class="modal-footer" id="mFooter"></div>
+    </div>
+</div>
+
+<form id="cancelForm" action="" method="POST" style="display:none"></form>
+
+<script>
+(function () {
+    /* Fallback anh */
+    document.querySelectorAll('.bimg').forEach(function (img) {
+        img.addEventListener('error', function () {
+            this.parentElement.innerHTML = '<div class="no-img"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg></div>';
+        });
+    });
+
+    var statusMap = {
+        pending:   { label:'Cho duyet',  cls:'badge-pending'   },
+        confirmed: { label:'Da xac nhan',cls:'badge-confirmed' },
+        active:    { label:'Dang thue',  cls:'badge-active'    },
+        completed: { label:'Hoan thanh', cls:'badge-completed' },
+        cancelled: { label:'Da huy',     cls:'badge-cancelled' }
+    };
+    var steps = ['pending','confirmed','active','completed'];
+    var stepLabels = { pending:'Cho duyet', confirmed:'Xac nhan', active:'Dang thue', completed:'Hoan thanh' };
+
+    /* Click card -> mo modal */
+    document.querySelectorAll('.booking-item').forEach(function (card) {
+        card.addEventListener('click', function () {
+            var b = JSON.parse(decodeURIComponent(this.getAttribute('data-b')));
+            openModal(b);
+        });
+    });
+
+    function openModal(b) {
+        document.getElementById('mTitle').textContent = 'Don #' + b.code;
+
+        var s = statusMap[b.status] || { label: b.status, cls: '' };
+        document.getElementById('mBadge').innerHTML =
+            '<span class="' + s.cls + '">' + s.label + '</span>';
+
+        /* Anh */
+        var imgEl = document.getElementById('mImg');
+        var imgPh = document.getElementById('mImgPh');
+        if (b.carImg) {
+            imgEl.src = b.carImg;
+            imgEl.style.display = 'block';
+            imgPh.style.display = 'none';
+            imgEl.onerror = function () { imgEl.style.display='none'; imgPh.style.display='flex'; };
+        } else {
+            imgEl.style.display = 'none';
+            imgPh.style.display = 'flex';
+        }
+
+        /* Timeline */
+        var tlEl = document.getElementById('mTimeline');
+        if (b.status === 'cancelled') {
+            tlEl.innerHTML = '<div style="width:100%;text-align:center;padding:8px 0;font-size:13px;color:#dc2626;font-weight:600">&#x2715; Don da bi huy</div>';
+        } else {
+            var cur = steps.indexOf(b.status);
+            tlEl.innerHTML = steps.map(function (step, i) {
+                var cls  = i < cur ? 'done' : (i === cur ? 'current' : '');
+                var icon = i < cur ? '&#x2713;' : (i + 1);
+                return '<div class="st-step ' + cls + '"><div class="st-dot">' + icon + '</div><div class="st-label">' + stepLabels[step] + '</div></div>';
+            }).join('');
+        }
+
+        /* Thong tin */
+        document.getElementById('mCarName').textContent  = b.carName  || '—';
+        document.getElementById('mCarBrand').textContent = b.carBrand || '—';
+        document.getElementById('mCarType').textContent  = b.carType  || '—';
+        document.getElementById('mCarPlate').textContent = b.carPlate || '—';
+        document.getElementById('mCarSeats').textContent = b.carSeats ? b.carSeats + ' cho ngoi' : '—';
+        var fmt = function (d) { return new Date(d).toLocaleDateString('vi-VN'); };
+        document.getElementById('mStart').textContent = fmt(b.startDate);
+        document.getElementById('mEnd').textContent   = fmt(b.endDate);
+        document.getElementById('mDays').textContent  = b.days + ' ngay';
+        document.getElementById('mTotal').textContent = Number(b.total).toLocaleString('vi-VN') + 'd';
+
+        var nw = document.getElementById('mNoteWrap');
+        if (b.note) { document.getElementById('mNote').textContent = b.note; nw.style.display='block'; }
+        else { nw.style.display = 'none'; }
+
+        /* Footer */
+        var footer = document.getElementById('mFooter');
+        footer.innerHTML = '';
+        var cb = mkBtn('close-btn', '&#x2715; Dong');
+        cb.addEventListener('click', closeModal);
+        footer.appendChild(cb);
+
+        if (b.status === 'pending' || b.status === 'confirmed') {
+            var xb = mkBtn('cancel-btn', '&#x1F6AB; Huy don');
+            xb.addEventListener('click', function () {
+                if (confirm('Ban co chac muon huy don nay?')) {
+                    var f = document.getElementById('cancelForm');
+                    f.action = '/my-bookings/' + b.id + '/cancel';
+                    f.submit();
+                }
+            });
+            footer.appendChild(xb);
+        }
+
+        document.getElementById('bModal').classList.add('open');
+        document.getElementById('bModal').scrollTop = 0;
+    }
+
+    function mkBtn(cls, html) {
+        var btn = document.createElement('button');
+        btn.className = 'mbtn ' + cls;
+        btn.innerHTML = html;
+        return btn;
+    }
+
+    function closeModal() { document.getElementById('bModal').classList.remove('open'); }
+    document.getElementById('mClose').addEventListener('click', closeModal);
+    document.getElementById('bModal').addEventListener('click', function (e) {
+        if (e.target === this) closeModal();
+    });
+})();
+</script>
+
+</body>
+</html>

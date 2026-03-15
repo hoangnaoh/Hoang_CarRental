@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= car.name %> - CarRental</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .breadcrumb { max-width:1100px;margin:20px auto 0;padding:0 20px;font-size:13px;color:#94a3b8; }
+        .breadcrumb a { color:#2563eb;text-decoration:none; }
+        .breadcrumb a:hover { text-decoration:underline; }
+
+        .detail-wrap {
+            max-width:1100px; margin:32px auto 60px; padding:0 20px;
+            display:grid; grid-template-columns:1fr 380px; gap:32px;
+        }
+        @media(max-width:768px){ .detail-wrap{ grid-template-columns:1fr; } }
+
+        .gallery-main { border-radius:16px;overflow:hidden;background:#f1f5f9;aspect-ratio:16/9; }
+        .gallery-main img { width:100%;height:100%;object-fit:cover;display:block; }
+        .gallery-no-img { width:100%;height:100%;display:flex;align-items:center;justify-content:center; }
+        .gallery-thumbs { display:flex;gap:10px;margin-top:10px;flex-wrap:wrap; }
+        .gallery-thumbs img { width:80px;height:56px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:border-color .15s; }
+        .gallery-thumbs img.active,
+        .gallery-thumbs img:hover { border-color:#2563eb; }
+
+        .car-detail-name { font-size:26px;font-weight:800;color:#1e293b;margin:16px 0 4px; }
+        .car-detail-sub  { font-size:14px;color:#94a3b8;margin-bottom:20px; }
+        .spec-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px; }
+        .spec-item { background:#f8fafc;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px; }
+        .spec-icon { font-size:20px; }
+        .spec-label { font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px; }
+        .spec-val   { font-size:14px;font-weight:600;color:#1e293b; }
+        .desc-block h3 { font-size:15px;font-weight:700;color:#1e293b;margin-bottom:8px; }
+        .desc-block p  { font-size:14px;color:#64748b;line-height:1.7; }
+
+        .booking-card {
+            background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;
+            padding:24px;position:sticky;top:24px;height:fit-content;
+        }
+        .price-big { font-size:28px;font-weight:800;color:#2563eb;margin-bottom:4px; }
+        .price-big span { font-size:14px;font-weight:400;color:#94a3b8; }
+        .rating-row { display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;margin-bottom:20px; }
+
+        .date-fields { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px; }
+        .date-field label { font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px; }
+        .date-field input[type="date"] {
+            width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;
+            font-size:13px;font-family:inherit;color:#1e293b;outline:none;
+            box-sizing:border-box;transition:border-color .15s;
+        }
+        .date-field input[type="date"]:focus { border-color:#2563eb; }
+        .date-field input.date-busy { border-color:#ef4444 !important; background:#fef2f2; }
+
+        .busy-warning {
+            background:#fef2f2;border-radius:8px;padding:10px 12px;
+            font-size:12px;color:#dc2626;margin-bottom:12px;
+            display:none;align-items:center;gap:6px;font-weight:500;
+        }
+        .busy-warning.show { display:flex; }
+
+        .price-calc { background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px; }
+        .price-calc-row { display:flex;justify-content:space-between;margin-bottom:6px;color:#64748b; }
+        .price-calc-row.total { font-weight:700;font-size:15px;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:6px;margin-bottom:0; }
+
+        .booking-error { font-size:13px;color:#ef4444;margin-bottom:10px;display:none; }
+        .status-wrap { margin-bottom:8px; }
+        .unavailable-box { background:#fef2f2;border-radius:10px;padding:14px;text-align:center;color:#ef4444;font-size:14px;font-weight:600; }
+
+        /* Busy dates indicator */
+        .busy-dates-info {
+            background:#fff7ed;border-radius:8px;padding:10px 12px;
+            margin-bottom:14px;font-size:12px;color:#92400e;
+        }
+        .busy-dates-info strong { display:block;margin-bottom:4px; }
+    </style>
+</head>
+<body>
+
+<%- include('../partials/navbar', { page: 'cars', user: typeof user !== 'undefined' ? user : null }) %>
+
+<div class="breadcrumb">
+    <a href="/">Trang chu</a> &rsaquo;
+    <a href="/cars">Danh sach xe</a> &rsaquo;
+    <%= car.name %>
+</div>
+
+<div class="detail-wrap">
+    <!-- Cot trai -->
+    <div>
+        <div class="gallery-main" id="galleryMain">
+            <% if (car.images && car.images.length > 0) { %>
+                <img id="mainImgEl" src="<%= car.images[0] %>" alt="<%= car.name %>">
+            <% } else { %>
+                <div class="gallery-no-img">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                        <path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/>
+                        <rect x="9" y="11" width="14" height="10" rx="2"/>
+                        <circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    </svg>
+                </div>
+            <% } %>
+        </div>
+
+        <% if (car.images && car.images.length > 1) { %>
+        <div class="gallery-thumbs" id="thumbsWrap">
+            <% car.images.forEach(function(img, i) { %>
+                <img src="<%= img %>" alt="anh <%= i+1 %>"
+                     class="<%= i===0 ? 'active' : '' %>"
+                     data-src="<%= img %>">
+            <% }); %>
+        </div>
+        <% } %>
+
+        <div class="status-wrap"><%- statusBadge(car.status) %></div>
+        <div class="car-detail-name"><%= car.name %></div>
+        <div class="car-detail-sub"><%= car.brand %> &middot; <%= car.type %> &middot; Bien so: <%= car.licensePlate %></div>
+
+        <div class="spec-grid">
+            <div class="spec-item">
+                <span class="spec-icon">&#x1F465;</span>
+                <div><div class="spec-label">So cho</div><div class="spec-val"><%= car.seats %> cho ngoi</div></div>
+            </div>
+            <div class="spec-item">
+                <span class="spec-icon">&#x2699;&#xFE0F;</span>
+                <div><div class="spec-label">Hop so</div><div class="spec-val">Tu dong</div></div>
+            </div>
+            <div class="spec-item">
+                <span class="spec-icon">&#x1F3F7;&#xFE0F;</span>
+                <div><div class="spec-label">Hang xe</div><div class="spec-val"><%= car.brand %></div></div>
+            </div>
+            <div class="spec-item">
+                <span class="spec-icon">&#x1F697;</span>
+                <div><div class="spec-label">Loai xe</div><div class="spec-val"><%= car.type %></div></div>
+            </div>
+        </div>
+
+        <% if (car.description) { %>
+        <div class="desc-block">
+            <h3>Mo ta xe</h3>
+            <p><%= car.description %></p>
+        </div>
+        <% } %>
+    </div>
+
+    <!-- Cot phai: Booking card -->
+    <div>
+        <div class="booking-card">
+            <div class="price-big">
+                <%= Number(car.pricePerDay).toLocaleString('vi-VN') %>d
+                <span>/ngay</span>
+            </div>
+            <div class="rating-row">
+                &#x2B50; <%= car.rating ? car.rating.toFixed(1) : '4.5' %>
+                <span>&middot; Dat xe nhanh</span>
+            </div>
+
+            <% if (car.status === 'available') { %>
+                <% if (typeof busyRanges !== 'undefined' && busyRanges !== '[]' && busyRanges !== '{}') { %>
+                <div class="busy-dates-info" id="busyInfo" style="display:none">
+                    <strong>&#x26A0;&#xFE0F; Mot so ngay da co nguoi dat:</strong>
+                    <span id="busyDatesList"></span>
+                </div>
+                <% } %>
+
+                <div class="date-fields">
+                    <div class="date-field">
+                        <label>Ngay nhan xe</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="date-field">
+                        <label>Ngay tra xe</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+
+                <div class="busy-warning" id="busyWarning">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span id="busyWarningText">Khoang ngay nay xe da co nguoi dat.</span>
+                </div>
+
+                <div class="price-calc" id="priceCalc" style="display:none">
+                    <div class="price-calc-row">
+                        <span id="calcLabel">Gia thue</span>
+                        <span id="calcAmount">0d</span>
+                    </div>
+                    <div class="price-calc-row">
+                        <span>Phi dich vu</span><span>Mien phi</span>
+                    </div>
+                    <div class="price-calc-row total">
+                        <span>Tong cong</span>
+                        <span id="calcTotal">0d</span>
+                    </div>
+                </div>
+
+                <div class="booking-error" id="bookingError"></div>
+
+                <button class="btn btn-primary btn-block" id="btnRent">Thue xe ngay</button>
+                <p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:10px">Mien phi huy truoc 24h</p>
+            <% } else { %>
+                <div class="unavailable-box">Xe hien khong kha dung</div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<!-- Data ngay ban -->
+<script>
+var BUSY_RANGES  = <%- typeof busyRanges !== 'undefined' ? busyRanges : '[]' %>;
+var MIN_DATE     = '<%= typeof minDate !== "undefined" ? minDate : "" %>';
+var PRICE_PER_DAY = <%= car.pricePerDay %>;
+var CAR_ID        = '<%= car._id %>';
+</script>
+
+<script>
+(function () {
+    /* Gallery thumbnails */
+    var thumbsWrap = document.getElementById('thumbsWrap');
+    if (thumbsWrap) {
+        thumbsWrap.addEventListener('click', function (e) {
+            var thumb = e.target.closest('img');
+            if (!thumb) return;
+            var mainImg = document.getElementById('mainImgEl');
+            if (mainImg) mainImg.src = thumb.getAttribute('data-src');
+            thumbsWrap.querySelectorAll('img').forEach(function (t) { t.classList.remove('active'); });
+            thumb.classList.add('active');
+        });
+    }
+
+    /* Image fallback */
+    var mainImgEl = document.getElementById('mainImgEl');
+    if (mainImgEl) {
+        mainImgEl.addEventListener('error', function () {
+            document.getElementById('galleryMain').innerHTML =
+                '<div class="gallery-no-img"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3"/><rect x="9" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="21" r="1"/><circle cx="20" cy="21" r="1"/></svg></div>';
+        });
+    }
+
+    /* Date inputs */
+    var startEl = document.getElementById('startDate');
+    var endEl   = document.getElementById('endDate');
+    if (!startEl || !endEl) return;
+
+    /* Min date = ngay mai */
+    var minDate = MIN_DATE || (function(){
+        var d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0];
+    })();
+
+    startEl.min   = minDate;
+    startEl.value = minDate;
+
+    var dayAfterMin = new Date(minDate);
+    dayAfterMin.setDate(dayAfterMin.getDate() + 1);
+    var dayAfterMinStr = dayAfterMin.toISOString().split('T')[0];
+    endEl.min   = dayAfterMinStr;
+    endEl.value = dayAfterMinStr;
+
+    /* Hien danh sach ngay ban neu co */
+    var busyRanges = Array.isArray(BUSY_RANGES) ? BUSY_RANGES : [];
+    if (busyRanges.length > 0) {
+        var infoEl = document.getElementById('busyInfo');
+        var listEl = document.getElementById('busyDatesList');
+        if (infoEl && listEl) {
+            var parts = busyRanges.map(function(r){
+                return new Date(r.start).toLocaleDateString('vi-VN') + ' - ' + new Date(r.end).toLocaleDateString('vi-VN');
+            });
+            listEl.textContent = parts.join(', ');
+            infoEl.style.display = 'block';
+        }
+    }
+
+    /* Kiem tra xem khoang ngay co bi busy khong */
+    function isBusy(start, end) {
+        var s = new Date(start);
+        var e = new Date(end);
+        return busyRanges.some(function(r) {
+            var rs = new Date(r.start);
+            var re = new Date(r.end);
+            return s < re && e > rs;
+        });
+    }
+
+    function updateUI() {
+        var s = startEl.value;
+        var e = endEl.value;
+
+        /* Xoa warning cu */
+        var warnEl = document.getElementById('busyWarning');
+        startEl.classList.remove('date-busy');
+        endEl.classList.remove('date-busy');
+        warnEl.classList.remove('show');
+        document.getElementById('priceCalc').style.display = 'none';
+
+        if (!s || !e) return;
+
+        var startD = new Date(s);
+        var endD   = new Date(e);
+
+        if (endD <= startD) return;
+
+        /* Kiem tra busy */
+        if (isBusy(s, e)) {
+            startEl.classList.add('date-busy');
+            endEl.classList.add('date-busy');
+            document.getElementById('busyWarningText').textContent =
+                'Xe da co nguoi dat trong khoang ngay nay. Vui long chon ngay khac.';
+            warnEl.classList.add('show');
+            return;
+        }
+
+        /* Tinh tien */
+        var days  = Math.ceil((endD - startD) / 86400000);
+        var total = days * PRICE_PER_DAY;
+        document.getElementById('calcLabel').textContent  = 'Gia thue (' + days + ' ngay)';
+        document.getElementById('calcAmount').textContent = total.toLocaleString('vi-VN') + 'd';
+        document.getElementById('calcTotal').textContent  = total.toLocaleString('vi-VN') + 'd';
+        document.getElementById('priceCalc').style.display = 'block';
+    }
+
+    startEl.addEventListener('change', function () {
+        /* endDate phai sau startDate it nhat 1 ngay */
+        var next = new Date(new Date(this.value).getTime() + 86400000).toISOString().split('T')[0];
+        endEl.min = next;
+        if (endEl.value <= this.value) endEl.value = next;
+        updateUI();
+    });
+
+    endEl.addEventListener('change', updateUI);
+    updateUI();
+
+    /* Nut thue xe */
+    var btnRent = document.getElementById('btnRent');
+    if (btnRent) {
+        btnRent.addEventListener('click', function () {
+            var startDate = startEl.value;
+            var endDate   = endEl.value;
+            var errEl     = document.getElementById('bookingError');
+
+            if (!startDate || !endDate) {
+                errEl.textContent   = 'Vui long chon ngay nhan va tra xe.';
+                errEl.style.display = 'block'; return;
+            }
+            if (new Date(endDate) <= new Date(startDate)) {
+                errEl.textContent   = 'Ngay tra xe phai sau ngay nhan xe.';
+                errEl.style.display = 'block'; return;
+            }
+            if (isBusy(startDate, endDate)) {
+                errEl.textContent   = 'Xe da co nguoi dat trong khoang ngay nay.';
+                errEl.style.display = 'block'; return;
+            }
+
+            /* Kiem tra min date */
+            var minD = new Date(MIN_DATE);
+            if (new Date(startDate) < minD) {
+                errEl.textContent   = 'Ngay nhan xe phai tu ngay mai tro di.';
+                errEl.style.display = 'block'; return;
+            }
+
+            errEl.style.display = 'none';
+            window.location.href = '/booking?carId=' + CAR_ID +
+                '&startDate=' + startDate + '&endDate=' + endDate;
+        });
+    }
+})();
+</script>
+</body>
+</html>

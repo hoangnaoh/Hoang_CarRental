@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý xe – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+
+<%- include('../partials/admin-sidebar', { user, adminPage: 'cars' }) %>
+
+<div class="admin-content">
+    <div class="page-head">
+        <div>
+            <h1>Quản Lý Danh Sách Xe</h1>
+            <p>Theo dõi, chỉnh sửa và cập nhật trạng thái đội xe của bạn.</p>
+        </div>
+        <a href="/admin/cars/new" class="btn btn-primary">+ Thêm xe mới</a>
+    </div>
+
+    <!-- Filter bar -->
+    <form class="filter-bar" action="/admin/cars" method="GET">
+        <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" name="search" placeholder="Tìm kiếm theo tên xe hoặc biển số..."
+                value="<%= query.search || '' %>">
+        </div>
+        <select name="status" onchange="this.form.submit()">
+            <option value="">Tất cả trạng thái</option>
+            <option value="available"    <%= query.status==='available'    ? 'selected':'' %>>Sẵn sàng</option>
+            <option value="rented"       <%= query.status==='rented'       ? 'selected':'' %>>Đang thuê</option>
+            <option value="maintenance"  <%= query.status==='maintenance'  ? 'selected':'' %>>Bảo trì</option>
+        </select>
+        <button type="submit" class="btn btn-outline">Tìm</button>
+    </form>
+
+    <!-- Table -->
+    <div class="admin-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên xe</th>
+                    <th>Loại xe</th>
+                    <th>Biển số</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (cars.length === 0) { %>
+                    <tr><td colspan="6" class="text-center">Không tìm thấy xe nào.</td></tr>
+                <% } %>
+                <% cars.forEach((car, idx) => { %>
+                <tr>
+                    <td class="text-muted">#CAR-<%= String((currentPage-1)*limit + idx+1).padStart(3,'0') %></td>
+                    <td><strong><%= car.name %></strong></td>
+                    <td><%= car.type %> <%= car.seats %> chỗ</td>
+                    <td><%= car.licensePlate %></td>
+                    <td><%- statusBadge(car.status) %></td>
+                    <td>
+                        <a href="/admin/cars/<%= car._id %>/edit" class="action-link edit">Sửa</a>
+                        <form action="/admin/cars/<%= car._id %>?_method=DELETE" method="POST" style="display:inline"
+                            onsubmit="return confirm('Xóa xe <%= car.name %>?')">
+                            <button type="submit" class="action-link delete">Xóa</button>
+                        </form>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <div class="table-foot">
+            <span>Hiển thị <%= (currentPage-1)*limit+1 %> đến <%= Math.min(currentPage*limit, total) %> trong số <%= total %> xe</span>
+            <% if (totalPages > 1) { %>
+            <div class="pagination">
+                <% if (currentPage > 1) { %><a href="?page=<%= currentPage-1 %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn">Trước</a><% } %>
+                <% for(let i=1; i<=totalPages; i++) { %>
+                    <% if(i===currentPage) { %>
+                        <span class="page-btn active"><%= i %></span>
+                    <% } else { %>
+                        <a href="?page=<%= i %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn"><%= i %></a>
+                    <% } %>
+                <% } %>
+                <% if (currentPage < totalPages) { %><a href="?page=<%= currentPage+1 %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn">Tiếp</a><% } %>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

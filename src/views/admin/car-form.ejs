@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= car ? 'Sửa xe' : 'Thêm xe mới' %> – Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        .img-preview-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .img-preview-wrap img {
+            width: 100px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .img-preview-wrap .img-error {
+            width: 100px;
+            height: 70px;
+            border-radius: 8px;
+            border: 1px dashed #fca5a5;
+            background: #fef2f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #ef4444;
+            text-align: center;
+            padding: 4px;
+        }
+        .field-hint {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body class="admin-body">
+
+<%- include('../partials/admin-sidebar', { user, adminPage: 'cars' }) %>
+
+<div class="admin-content">
+    <div class="page-head">
+        <div>
+            <h1><%= car ? 'Chỉnh sửa xe' : 'Thêm xe mới' %></h1>
+            <p><a href="/admin/cars" style="color:#2563eb">← Quay lại danh sách xe</a></p>
+        </div>
+    </div>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-error" style="margin-bottom:20px"><%= error %></div>
+    <% } %>
+
+    <div class="admin-card" style="max-width:680px">
+        <div style="padding:24px">
+            <form action="<%= car ? '/admin/cars/'+car._id : '/admin/cars' %>" method="POST">
+                <% if (car) { %>
+                    <input type="hidden" name="_method" value="PUT">
+                <% } %>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Tên xe *</label>
+                        <input type="text" name="name" value="<%= car ? car.name : '' %>" required placeholder="VD: Toyota Camry 2023">
+                    </div>
+                    <div class="form-group">
+                        <label>Biển số *</label>
+                        <input type="text" name="licensePlate" value="<%= car ? car.licensePlate : '' %>" required placeholder="VD: 30H-123.45">
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Hãng xe *</label>
+                        <select name="brand" required>
+                            <option value="">Chọn hãng</option>
+                            <% ['Toyota','Honda','Hyundai','VinFast','Ford','Mercedes-Benz','BMW','Kia','Mazda','Other'].forEach(b => { %>
+                                <option value="<%= b %>" <%= car && car.brand===b ? 'selected' : '' %>><%= b %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Loại xe *</label>
+                        <select name="type" required>
+                            <option value="">Chọn loại</option>
+                            <% ['Sedan','SUV','Hatchback','MPV','Pickup','Van'].forEach(t => { %>
+                                <option value="<%= t %>" <%= car && car.type===t ? 'selected' : '' %>><%= t %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Số chỗ *</label>
+                        <select name="seats" required>
+                            <% [4,5,7,9,16].forEach(s => { %>
+                                <option value="<%= s %>" <%= car && car.seats===s ? 'selected' : '' %>><%= s %> chỗ</option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Giá thuê/ngày (đ) *</label>
+                        <input type="number" name="pricePerDay" value="<%= car ? car.pricePerDay : '' %>" required min="0" placeholder="VD: 1500000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Trạng thái</label>
+                    <select name="status">
+                        <option value="available"   <%= car && car.status==='available'   ? 'selected' : '' %>>Sẵn sàng</option>
+                        <option value="rented"      <%= car && car.status==='rented'      ? 'selected' : '' %>>Đang thuê</option>
+                        <option value="maintenance" <%= car && car.status==='maintenance' ? 'selected' : '' %>>Bảo trì</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Ảnh xe</label>
+                    <textarea
+                        id="imagesInput"
+                        name="images"
+                        rows="4"
+                        placeholder="Dán link ảnh vào đây, mỗi link một dòng:&#10;https://example.com/anh1.jpg&#10;https://example.com/anh2.jpg"
+                        oninput="previewImages(this.value)"
+                    ><%= car && car.images && car.images.length > 0 ? car.images.join('\n') : '' %></textarea>
+                    <p class="field-hint">Mỗi link ảnh một dòng. Hỗ trợ link từ bất kỳ nguồn nào (Google Drive public, Imgur, v.v.)</p>
+                    <div class="img-preview-wrap" id="imgPreview"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Mô tả xe</label>
+                    <textarea name="description" rows="4" placeholder="Mô tả về xe..."><%= car ? car.description : '' %></textarea>
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px">
+                    <a href="/admin/cars" class="btn btn-outline">Hủy</a>
+                    <button type="submit" class="btn btn-primary"><%= car ? 'Lưu thay đổi' : 'Thêm xe' %></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImages(val) {
+    const wrap = document.getElementById('imgPreview');
+    const urls = val.split('\n').map(s => s.trim()).filter(Boolean);
+    wrap.innerHTML = '';
+    urls.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'preview';
+        img.onerror = function() {
+            const div = document.createElement('div');
+            div.className = 'img-error';
+            div.textContent = 'Link lỗi';
+            this.replaceWith(div);
+        };
+        wrap.appendChild(img);
+    });
+}
+
+// Tự preview khi load trang (trường hợp edit)
+window.addEventListener('DOMContentLoaded', () => {
+    const ta = document.getElementById('imagesInput');
+    if (ta && ta.value.trim()) previewImages(ta.value);
+});
+</script>
+
+</body>
+</html>
