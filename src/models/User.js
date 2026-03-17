@@ -12,9 +12,9 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Mật khẩu là bắt buộc'],
         minlength: [6, 'Mật khẩu phải có ít nhất 6 ký tự'],
-        select: false
+        select: false,
+        // Bỏ required để Google login không cần password
     },
     fullName: {
         type: String,
@@ -36,7 +36,10 @@ const userSchema = new mongoose.Schema({
     address: String,
     isEmailVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
-    googleId: String,
+    googleId: { 
+        type: String, 
+        sparse: true  // Cho phép nhiều null, unique chỉ với giá trị thật
+    },
     authMethods: [{ type: String, enum: ['local', 'google'] }],
     lastLogin: Date,
     passwordChangedAt: Date,
@@ -46,21 +49,19 @@ const userSchema = new mongoose.Schema({
     emailVerificationExpires: Date
 }, { timestamps: true });
 
-// Hash password trước khi lưu
+// Hash password - chỉ khi có password
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
+    if (!this.password || !this.isModified('password')) return next();
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     this.passwordChangedAt = Date.now() - 1000;
     next();
 });
 
-// So sánh mật khẩu
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Kiểm tra mật khẩu có thay đổi sau khi JWT được cấp không
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
     if (this.passwordChangedAt) {
         const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
