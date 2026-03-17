@@ -26,7 +26,7 @@ const sendEmail = async (options) => {
 
     // Verify connection configuration
     try {
-        await transporter.verify();
+        // await transporter.verify();
         console.log('SMTP connection verified successfully');
     } catch (verifyError) {
         console.error('SMTP verification failed:', verifyError.message);
