@@ -197,11 +197,20 @@
                                 // thì hiện "Bận ngày này", ngược lại "Đặt trước"
                                 const isBusyForDates = car.isAvailableForDates === false;
                             %>
-                            <% if (isBusyForDates) { %>
-                                <button class="btn-rented" onclick="event.stopPropagation()">
-                                    Bận ngày này
-                                </button>
-                            <% } else { %>
+                            <% if (isBusyForDates && query.startDate && query.endDate) { %>
+    <button class="btn-rented" onclick="event.stopPropagation()">Bận ngày này</button>
+<% } else { %>
+    <button
+        class="btn btn-primary btn-sm rent-btn"
+        style="background:#f59e0b;border-color:#f59e0b;"
+        data-id="<%= car._id %>"
+        data-name="<%= encodeURIComponent(car.name) %>"
+        data-start="<%= query.startDate || '' %>"
+        data-end="<%= query.endDate || '' %>"
+        onclick="event.stopPropagation()">
+        Đặt trước
+    </button>
+<% } %>
                                 <button
                                     class="btn btn-primary btn-sm rent-btn"
                                     style="background:#f59e0b;border-color:#f59e0b;"
