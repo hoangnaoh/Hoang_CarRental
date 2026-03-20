@@ -47,6 +47,19 @@
             background: #fff; font-size: 14px; font-weight: 500; color: #64748b; cursor: pointer;
         }
         .btn-cancel-modal:hover { background: #f8fafc; }
+
+        /* Badge xe đang thuê trên card */
+        .btn-rented {
+            background: #fff7ed;
+            color: #ea580c;
+            border: 1.5px solid #fed7aa;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: default;
+            font-family: inherit;
+        }
     </style>
 </head>
 <body>
@@ -125,7 +138,7 @@
 
     <div class="cars-main">
         <div class="cars-toolbar">
-            <span class="result-count"><strong><%= total %></strong> xe khả dụng</span>
+            <span class="result-count"><strong><%= total %></strong> xe tìm thấy</span>
             <div class="sort-wrap">
                 <label>Sắp xếp:</label>
                 <select id="sortSelect">
@@ -178,15 +191,39 @@
                             <%= Number(car.pricePerDay).toLocaleString('vi-VN') %>đ
                             <span>/ngày</span>
                         </div>
-                        <button
-                            class="btn btn-primary btn-sm rent-btn"
-                            data-id="<%= car._id %>"
-                            data-name="<%= encodeURIComponent(car.name) %>"
-                            data-start="<%= query.startDate || '' %>"
-                            data-end="<%= query.endDate || '' %>"
-                            onclick="event.stopPropagation()">
-                            Thuê ngay
-                        </button>
+                        <% if (car.status === 'rented') { %>
+                            <%
+                                // Nếu khách đã chọn ngày và xe này bận trong khoảng đó
+                                // thì hiện "Bận ngày này", ngược lại "Đặt trước"
+                                const isBusyForDates = car.isAvailableForDates === false;
+                            %>
+                            <% if (isBusyForDates) { %>
+                                <button class="btn-rented" onclick="event.stopPropagation()">
+                                    Bận ngày này
+                                </button>
+                            <% } else { %>
+                                <button
+                                    class="btn btn-primary btn-sm rent-btn"
+                                    style="background:#f59e0b;border-color:#f59e0b;"
+                                    data-id="<%= car._id %>"
+                                    data-name="<%= encodeURIComponent(car.name) %>"
+                                    data-start="<%= query.startDate || '' %>"
+                                    data-end="<%= query.endDate || '' %>"
+                                    onclick="event.stopPropagation()">
+                                    Đặt trước
+                                </button>
+                            <% } %>
+                        <% } else { %>
+                            <button
+                                class="btn btn-primary btn-sm rent-btn"
+                                data-id="<%= car._id %>"
+                                data-name="<%= encodeURIComponent(car.name) %>"
+                                data-start="<%= query.startDate || '' %>"
+                                data-end="<%= query.endDate || '' %>"
+                                onclick="event.stopPropagation()">
+                                Thuê ngay
+                            </button>
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -244,7 +281,7 @@
 (function () {
     var selectedCarId = null;
 
-    // Nút "Thuê ngay" — dùng data-attribute, không dùng onclick inline
+    // Nút "Thuê ngay" / "Đặt trước"
     document.querySelectorAll('.rent-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
             selectedCarId = this.getAttribute('data-id');
@@ -255,11 +292,11 @@
             var today    = new Date().toISOString().split('T')[0];
             var tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-            document.getElementById('modalCarName').textContent    = name;
-            document.getElementById('modalStartDate').value        = preStart || today;
-            document.getElementById('modalEndDate').value          = preEnd   || tomorrow;
-            document.getElementById('modalStartDate').min          = today;
-            document.getElementById('modalEndDate').min            = tomorrow;
+            document.getElementById('modalCarName').textContent   = name;
+            document.getElementById('modalStartDate').value       = preStart || today;
+            document.getElementById('modalEndDate').value         = preEnd   || tomorrow;
+            document.getElementById('modalStartDate').min         = today;
+            document.getElementById('modalEndDate').min           = tomorrow;
             document.getElementById('modalError').style.display   = 'none';
             document.getElementById('bookingModal').classList.add('open');
         });
@@ -278,13 +315,13 @@
         var errEl     = document.getElementById('modalError');
 
         if (!startDate || !endDate) {
-            errEl.textContent    = 'Vui lòng chọn đầy đủ ngày nhận và trả xe.';
-            errEl.style.display  = 'block';
+            errEl.textContent   = 'Vui lòng chọn đầy đủ ngày nhận và trả xe.';
+            errEl.style.display = 'block';
             return;
         }
         if (new Date(endDate) <= new Date(startDate)) {
-            errEl.textContent    = 'Ngày trả xe phải sau ngày nhận xe.';
-            errEl.style.display  = 'block';
+            errEl.textContent   = 'Ngày trả xe phải sau ngày nhận xe.';
+            errEl.style.display = 'block';
             return;
         }
 
@@ -306,9 +343,7 @@
         var next = new Date(new Date(this.value).getTime() + 86400000).toISOString().split('T')[0];
         var endInput = document.getElementById('modalEndDate');
         endInput.min = next;
-        if (endInput.value <= this.value) {
-            endInput.value = next;
-        }
+        if (endInput.value <= this.value) endInput.value = next;
     });
 
     // Sort

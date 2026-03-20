@@ -162,28 +162,44 @@ exports.getCarsList = async (req, res) => {
         const { brand, type, seats, startDate, endDate, sortBy = 'pricePerDay', page = 1 } = req.query;
         const limit = 8;
         const skip  = (page - 1) * limit;
-
-        const filter = { status: 'available' };
+ 
+        const filter = { status: { $ne: 'maintenance' } };
+        // Hiện tất cả xe trừ xe bảo trì — xe rented vẫn hiện
+ 
         if (brand) filter.brand = { $in: Array.isArray(brand) ? brand : [brand] };
         if (type)  filter.type  = type;
         if (seats) filter.seats = { $in: Array.isArray(seats) ? seats.map(Number) : [Number(seats)] };
-
-        // Chặn xe đang bận trong khoảng tìm kiếm
+ 
+        // Tính xe bận trong khoảng ngày khách chọn
+        let busyCarIds = [];
         if (startDate && endDate) {
-            const busyCars = await Booking.find({
+            busyCarIds = await Booking.find({
                 status:    { $in: ['pending', 'confirmed', 'active'] },
                 startDate: { $lt: new Date(endDate) },
                 endDate:   { $gt: new Date(startDate) }
             }).distinct('car');
-            filter._id = { $nin: busyCars };
+            // KHÔNG loại xe rented khỏi danh sách — chỉ dùng busyCarIds để gắn flag
         }
-
+ 
         const total      = await Car.countDocuments(filter);
         const cars       = await Car.find(filter).sort(sortBy).skip(skip).limit(limit);
         const totalPages = Math.ceil(total / limit);
-
+ 
+        // Gắn flag isAvailableForDates cho từng xe để view biết cách hiển thị nút
+        const carsWithFlag = cars.map(car => {
+            const obj = car.toObject();
+            if (startDate && endDate) {
+                obj.isAvailableForDates = !busyCarIds.some(id => id.toString() === car._id.toString());
+            } else {
+                obj.isAvailableForDates = car.status === 'available';
+            }
+            return obj;
+        });
+ 
         res.render('cars/list', {
-            cars, total, totalPages,
+            cars: carsWithFlag,
+            total,
+            totalPages,
             currentPage: Number(page),
             query: req.query,
             user: req.user || null,
@@ -197,7 +213,6 @@ exports.getCarsList = async (req, res) => {
         });
     }
 };
-
 exports.getCarDetail = async (req, res) => {
     try {
         const car = await Car.findById(req.params.id);
