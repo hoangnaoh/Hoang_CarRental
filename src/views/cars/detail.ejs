@@ -43,6 +43,16 @@
         .price-big span { font-size:14px;font-weight:400;color:#94a3b8; }
         .rating-row { display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;margin-bottom:20px; }
 
+        /* Thông báo xe đang được thuê */
+        .rented-notice {
+            background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;
+            padding:12px 14px;margin-bottom:16px;
+            display:flex;align-items:flex-start;gap:8px;
+        }
+        .rented-notice-icon { font-size:16px;flex-shrink:0;margin-top:1px; }
+        .rented-notice-text { font-size:13px;color:#92400e;line-height:1.5; }
+        .rented-notice-text strong { display:block;margin-bottom:2px; }
+
         .date-fields { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px; }
         .date-field label { font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px; }
         .date-field input[type="date"] {
@@ -68,7 +78,6 @@
         .status-wrap { margin-bottom:8px; }
         .unavailable-box { background:#fef2f2;border-radius:10px;padding:14px;text-align:center;color:#ef4444;font-size:14px;font-weight:600; }
 
-        /* Busy dates indicator */
         .busy-dates-info {
             background:#fff7ed;border-radius:8px;padding:10px 12px;
             margin-bottom:14px;font-size:12px;color:#92400e;
@@ -81,13 +90,13 @@
 <%- include('../partials/navbar', { page: 'cars', user: typeof user !== 'undefined' ? user : null }) %>
 
 <div class="breadcrumb">
-    <a href="/">Trang chu</a> &rsaquo;
-    <a href="/cars">Danh sach xe</a> &rsaquo;
+    <a href="/">Trang chủ</a> &rsaquo;
+    <a href="/cars">Danh sách xe</a> &rsaquo;
     <%= car.name %>
 </div>
 
 <div class="detail-wrap">
-    <!-- Cot trai -->
+    <!-- Cột trái -->
     <div>
         <div class="gallery-main" id="galleryMain">
             <% if (car.images && car.images.length > 0) { %>
@@ -106,7 +115,7 @@
         <% if (car.images && car.images.length > 1) { %>
         <div class="gallery-thumbs" id="thumbsWrap">
             <% car.images.forEach(function(img, i) { %>
-                <img src="<%= img %>" alt="anh <%= i+1 %>"
+                <img src="<%= img %>" alt="ảnh <%= i+1 %>"
                      class="<%= i===0 ? 'active' : '' %>"
                      data-src="<%= img %>">
             <% }); %>
@@ -115,62 +124,80 @@
 
         <div class="status-wrap"><%- statusBadge(car.status) %></div>
         <div class="car-detail-name"><%= car.name %></div>
-        <div class="car-detail-sub"><%= car.brand %> &middot; <%= car.type %> &middot; Bien so: <%= car.licensePlate %></div>
+        <div class="car-detail-sub"><%= car.brand %> &middot; <%= car.type %> &middot; Biển số: <%= car.licensePlate %></div>
 
         <div class="spec-grid">
             <div class="spec-item">
                 <span class="spec-icon">&#x1F465;</span>
-                <div><div class="spec-label">So cho</div><div class="spec-val"><%= car.seats %> cho ngoi</div></div>
+                <div><div class="spec-label">Số chỗ</div><div class="spec-val"><%= car.seats %> chỗ ngồi</div></div>
             </div>
             <div class="spec-item">
                 <span class="spec-icon">&#x2699;&#xFE0F;</span>
-                <div><div class="spec-label">Hop so</div><div class="spec-val">Tu dong</div></div>
+                <div><div class="spec-label">Hộp số</div><div class="spec-val">Tự động</div></div>
             </div>
             <div class="spec-item">
                 <span class="spec-icon">&#x1F3F7;&#xFE0F;</span>
-                <div><div class="spec-label">Hang xe</div><div class="spec-val"><%= car.brand %></div></div>
+                <div><div class="spec-label">Hãng xe</div><div class="spec-val"><%= car.brand %></div></div>
             </div>
             <div class="spec-item">
                 <span class="spec-icon">&#x1F697;</span>
-                <div><div class="spec-label">Loai xe</div><div class="spec-val"><%= car.type %></div></div>
+                <div><div class="spec-label">Loại xe</div><div class="spec-val"><%= car.type %></div></div>
             </div>
         </div>
 
         <% if (car.description) { %>
         <div class="desc-block">
-            <h3>Mo ta xe</h3>
+            <h3>Mô tả xe</h3>
             <p><%= car.description %></p>
         </div>
         <% } %>
     </div>
 
-    <!-- Cot phai: Booking card -->
+    <!-- Cột phải: Booking card -->
     <div>
         <div class="booking-card">
             <div class="price-big">
-                <%= Number(car.pricePerDay).toLocaleString('vi-VN') %>d
-                <span>/ngay</span>
+                <%= Number(car.pricePerDay).toLocaleString('vi-VN') %>đ
+                <span>/ngày</span>
             </div>
             <div class="rating-row">
                 &#x2B50; <%= car.rating ? car.rating.toFixed(1) : '4.5' %>
-                <span>&middot; Dat xe nhanh</span>
+                <span>&middot; Đặt xe nhanh</span>
             </div>
 
-            <% if (car.status === 'available') { %>
-                <% if (typeof busyRanges !== 'undefined' && busyRanges !== '[]' && busyRanges !== '{}') { %>
+            <% if (car.status === 'maintenance') { %>
+                <!-- Xe bảo trì: không cho đặt -->
+                <div class="unavailable-box">🔧 Xe đang bảo trì, tạm thời không cho thuê</div>
+
+            <% } else { %>
+                <!-- available hoặc rented: đều cho chọn ngày -->
+
+                <% if (car.status === 'rented') { %>
+                    <!-- Thông báo nhẹ: xe đang có khách nhưng vẫn đặt trước được -->
+                    <div class="rented-notice">
+                        <span class="rented-notice-icon">🔑</span>
+                        <div class="rented-notice-text">
+                            <strong>Xe đang được thuê</strong>
+                            Bạn vẫn có thể đặt trước cho ngày khác. Hệ thống sẽ báo nếu ngày bạn chọn bị trùng.
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- Hiện danh sách ngày bận nếu có -->
+                <% if (typeof busyRanges !== 'undefined' && busyRanges !== '[]') { %>
                 <div class="busy-dates-info" id="busyInfo" style="display:none">
-                    <strong>&#x26A0;&#xFE0F; Mot so ngay da co nguoi dat:</strong>
+                    <strong>⚠️ Một số ngày đã có người đặt:</strong>
                     <span id="busyDatesList"></span>
                 </div>
                 <% } %>
 
                 <div class="date-fields">
                     <div class="date-field">
-                        <label>Ngay nhan xe</label>
+                        <label>Ngày nhận xe</label>
                         <input type="date" id="startDate">
                     </div>
                     <div class="date-field">
-                        <label>Ngay tra xe</label>
+                        <label>Ngày trả xe</label>
                         <input type="date" id="endDate">
                     </div>
                 </div>
@@ -179,29 +206,28 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    <span id="busyWarningText">Khoang ngay nay xe da co nguoi dat.</span>
+                    <span id="busyWarningText">Khoảng ngày này xe đã có người đặt.</span>
                 </div>
 
                 <div class="price-calc" id="priceCalc" style="display:none">
                     <div class="price-calc-row">
-                        <span id="calcLabel">Gia thue</span>
-                        <span id="calcAmount">0d</span>
+                        <span id="calcLabel">Giá thuê</span>
+                        <span id="calcAmount">0đ</span>
                     </div>
                     <div class="price-calc-row">
-                        <span>Phi dich vu</span><span>Mien phi</span>
+                        <span>Phí dịch vụ</span><span>Miễn phí</span>
                     </div>
                     <div class="price-calc-row total">
-                        <span>Tong cong</span>
-                        <span id="calcTotal">0d</span>
+                        <span>Tổng cộng</span>
+                        <span id="calcTotal">0đ</span>
                     </div>
                 </div>
 
                 <div class="booking-error" id="bookingError"></div>
 
-                <button class="btn btn-primary btn-block" id="btnRent">Thue xe ngay</button>
-                <p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:10px">Mien phi huy truoc 24h</p>
-            <% } else { %>
-                <div class="unavailable-box">Xe hien khong kha dung</div>
+                <button class="btn btn-primary btn-block" id="btnRent">Thuê xe ngay</button>
+                <p style="font-size:12px;color:#94a3b8;text-align:center;margin-top:10px">Miễn phí hủy trước 24h</p>
+
             <% } %>
         </div>
     </div>
@@ -209,10 +235,9 @@
 
 <%- include('../partials/footer') %>
 
-<!-- Data ngay ban -->
 <script>
-var BUSY_RANGES  = <%- typeof busyRanges !== 'undefined' ? busyRanges : '[]' %>;
-var MIN_DATE     = '<%= typeof minDate !== "undefined" ? minDate : "" %>';
+var BUSY_RANGES   = <%- typeof busyRanges !== 'undefined' ? busyRanges : '[]' %>;
+var MIN_DATE      = '<%= typeof minDate !== "undefined" ? minDate : "" %>';
 var PRICE_PER_DAY = <%= car.pricePerDay %>;
 var CAR_ID        = '<%= car._id %>';
 </script>
@@ -241,14 +266,14 @@ var CAR_ID        = '<%= car._id %>';
         });
     }
 
-    /* Date inputs */
+    /* Nếu không có form đặt xe (xe maintenance) thì dừng */
     var startEl = document.getElementById('startDate');
     var endEl   = document.getElementById('endDate');
     if (!startEl || !endEl) return;
 
-    /* Min date = ngay mai */
-    var minDate = MIN_DATE || (function(){
-        var d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0];
+    /* Min date = ngày mai */
+    var minDate = MIN_DATE || (function () {
+        var d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0];
     })();
 
     startEl.min   = minDate;
@@ -260,112 +285,95 @@ var CAR_ID        = '<%= car._id %>';
     endEl.min   = dayAfterMinStr;
     endEl.value = dayAfterMinStr;
 
-    /* Hien danh sach ngay ban neu co */
+    /* Hiện danh sách ngày bận nếu có */
     var busyRanges = Array.isArray(BUSY_RANGES) ? BUSY_RANGES : [];
     if (busyRanges.length > 0) {
         var infoEl = document.getElementById('busyInfo');
         var listEl = document.getElementById('busyDatesList');
         if (infoEl && listEl) {
-            var parts = busyRanges.map(function(r){
-                return new Date(r.start).toLocaleDateString('vi-VN') + ' - ' + new Date(r.end).toLocaleDateString('vi-VN');
+            var parts = busyRanges.map(function (r) {
+                return new Date(r.start).toLocaleDateString('vi-VN') + ' – ' + new Date(r.end).toLocaleDateString('vi-VN');
             });
             listEl.textContent = parts.join(', ');
             infoEl.style.display = 'block';
         }
     }
 
-    /* Kiem tra xem khoang ngay co bi busy khong */
+    /* Kiểm tra khoảng ngày có bị bận không */
     function isBusy(start, end) {
         var s = new Date(start);
         var e = new Date(end);
-        return busyRanges.some(function(r) {
-            var rs = new Date(r.start);
-            var re = new Date(r.end);
-            return s < re && e > rs;
+        return busyRanges.some(function (r) {
+            return s < new Date(r.end) && e > new Date(r.start);
         });
     }
 
     function updateUI() {
         var s = startEl.value;
         var e = endEl.value;
-
-        /* Xoa warning cu */
         var warnEl = document.getElementById('busyWarning');
+
         startEl.classList.remove('date-busy');
         endEl.classList.remove('date-busy');
         warnEl.classList.remove('show');
         document.getElementById('priceCalc').style.display = 'none';
 
         if (!s || !e) return;
+        if (new Date(e) <= new Date(s)) return;
 
-        var startD = new Date(s);
-        var endD   = new Date(e);
-
-        if (endD <= startD) return;
-
-        /* Kiem tra busy */
         if (isBusy(s, e)) {
             startEl.classList.add('date-busy');
             endEl.classList.add('date-busy');
             document.getElementById('busyWarningText').textContent =
-                'Xe da co nguoi dat trong khoang ngay nay. Vui long chon ngay khac.';
+                'Xe đã có người đặt trong khoảng ngày này. Vui lòng chọn ngày khác.';
             warnEl.classList.add('show');
             return;
         }
 
-        /* Tinh tien */
-        var days  = Math.ceil((endD - startD) / 86400000);
+        var days  = Math.ceil((new Date(e) - new Date(s)) / 86400000);
         var total = days * PRICE_PER_DAY;
-        document.getElementById('calcLabel').textContent  = 'Gia thue (' + days + ' ngay)';
-        document.getElementById('calcAmount').textContent = total.toLocaleString('vi-VN') + 'd';
-        document.getElementById('calcTotal').textContent  = total.toLocaleString('vi-VN') + 'd';
+        document.getElementById('calcLabel').textContent  = 'Giá thuê (' + days + ' ngày)';
+        document.getElementById('calcAmount').textContent = total.toLocaleString('vi-VN') + 'đ';
+        document.getElementById('calcTotal').textContent  = total.toLocaleString('vi-VN') + 'đ';
         document.getElementById('priceCalc').style.display = 'block';
     }
 
     startEl.addEventListener('change', function () {
-        /* endDate phai sau startDate it nhat 1 ngay */
         var next = new Date(new Date(this.value).getTime() + 86400000).toISOString().split('T')[0];
         endEl.min = next;
         if (endEl.value <= this.value) endEl.value = next;
         updateUI();
     });
-
     endEl.addEventListener('change', updateUI);
     updateUI();
 
-    /* Nut thue xe */
-    var btnRent = document.getElementById('btnRent');
-    if (btnRent) {
-        btnRent.addEventListener('click', function () {
-            var startDate = startEl.value;
-            var endDate   = endEl.value;
-            var errEl     = document.getElementById('bookingError');
+    /* Nút thuê xe */
+    document.getElementById('btnRent').addEventListener('click', function () {
+        var startDate = startEl.value;
+        var endDate   = endEl.value;
+        var errEl     = document.getElementById('bookingError');
 
-            if (!startDate || !endDate) {
-                errEl.textContent   = 'Vui long chon ngay nhan va tra xe.';
-                errEl.style.display = 'block'; return;
-            }
-            if (new Date(endDate) <= new Date(startDate)) {
-                errEl.textContent   = 'Ngay tra xe phai sau ngay nhan xe.';
-                errEl.style.display = 'block'; return;
-            }
-            if (isBusy(startDate, endDate)) {
-                errEl.textContent   = 'Xe da co nguoi dat trong khoang ngay nay.';
-                errEl.style.display = 'block'; return;
-            }
+        if (!startDate || !endDate) {
+            errEl.textContent = 'Vui lòng chọn ngày nhận và trả xe.';
+            errEl.style.display = 'block'; return;
+        }
+        if (new Date(endDate) <= new Date(startDate)) {
+            errEl.textContent = 'Ngày trả xe phải sau ngày nhận xe.';
+            errEl.style.display = 'block'; return;
+        }
+        if (new Date(startDate) < new Date(MIN_DATE)) {
+            errEl.textContent = 'Ngày nhận xe phải từ ngày mai trở đi.';
+            errEl.style.display = 'block'; return;
+        }
+        if (isBusy(startDate, endDate)) {
+            errEl.textContent = 'Xe đã có người đặt trong khoảng ngày này.';
+            errEl.style.display = 'block'; return;
+        }
 
-            /* Kiem tra min date */
-            var minD = new Date(MIN_DATE);
-            if (new Date(startDate) < minD) {
-                errEl.textContent   = 'Ngay nhan xe phai tu ngay mai tro di.';
-                errEl.style.display = 'block'; return;
-            }
-
-            errEl.style.display = 'none';
-            window.location.href = '/booking?carId=' + CAR_ID +
-                '&startDate=' + startDate + '&endDate=' + endDate;
-        });
-    }
+        errEl.style.display = 'none';
+        window.location.href = '/booking?carId=' + CAR_ID +
+            '&startDate=' + startDate + '&endDate=' + endDate;
+    });
 })();
 </script>
 </body>
