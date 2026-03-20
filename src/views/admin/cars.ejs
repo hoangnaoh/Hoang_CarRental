@@ -30,9 +30,9 @@
         </div>
         <select name="status" onchange="this.form.submit()">
             <option value="">Tất cả trạng thái</option>
-            <option value="available"    <%= query.status==='available'    ? 'selected':'' %>>Sẵn sàng</option>
-            <option value="rented"       <%= query.status==='rented'       ? 'selected':'' %>>Đang thuê</option>
-            <option value="maintenance"  <%= query.status==='maintenance'  ? 'selected':'' %>>Bảo trì</option>
+            <option value="available"   <%= query.status==='available'   ? 'selected':'' %>>Sẵn sàng</option>
+            <option value="rented"      <%= query.status==='rented'      ? 'selected':'' %>>Đang thuê</option>
+            <option value="maintenance" <%= query.status==='maintenance' ? 'selected':'' %>>Bảo trì</option>
         </select>
         <button type="submit" class="btn btn-outline">Tìm</button>
     </form>
@@ -60,17 +60,19 @@
                     <td><strong><%= car.name %></strong></td>
                     <td><%= car.type %> <%= car.seats %> chỗ</td>
                     <td><%= car.licensePlate %></td>
-                    <% if (car.status === 'rented') {
-    const b = carBookings[car._id.toString()];
-    const returnDate = b ? new Date(b.endDate).toLocaleDateString('vi-VN') : null;
-%>
-    <span class="badge-rented">Đang thuê</span>
-    <% if (returnDate) { %>
-        <small style="color:#94a3b8; display:block;">Trả: <%= returnDate %></small>
-    <% } %>
-<% } else { %>
-    <%- statusBadge(car.status) %>
-<% } %>
+                    <td>
+                        <% if (car.status === 'rented') {
+                            const b = carBookings[car._id.toString()];
+                            const returnDate = b ? new Date(b.endDate).toLocaleDateString('vi-VN') : null;
+                        %>
+                            <%- statusBadge(car.status) %>
+                            <% if (returnDate) { %>
+                                <small style="color:#94a3b8; display:block; margin-top:3px;">Trả: <%= returnDate %></small>
+                            <% } %>
+                        <% } else { %>
+                            <%- statusBadge(car.status) %>
+                        <% } %>
+                    </td>
                     <td>
                         <a href="/admin/cars/<%= car._id %>/edit" class="action-link edit">Sửa</a>
                         <form action="/admin/cars/<%= car._id %>?_method=DELETE" method="POST" style="display:inline"
@@ -87,15 +89,19 @@
             <span>Hiển thị <%= (currentPage-1)*limit+1 %> đến <%= Math.min(currentPage*limit, total) %> trong số <%= total %> xe</span>
             <% if (totalPages > 1) { %>
             <div class="pagination">
-                <% if (currentPage > 1) { %><a href="?page=<%= currentPage-1 %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn">Trước</a><% } %>
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage-1 %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn">Trước</a>
+                <% } %>
                 <% for(let i=1; i<=totalPages; i++) { %>
-                    <% if(i===currentPage) { %>
+                    <% if (i === currentPage) { %>
                         <span class="page-btn active"><%= i %></span>
                     <% } else { %>
                         <a href="?page=<%= i %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn"><%= i %></a>
                     <% } %>
                 <% } %>
-                <% if (currentPage < totalPages) { %><a href="?page=<%= currentPage+1 %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn">Tiếp</a><% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage+1 %>&status=<%= query.status||'' %>&search=<%= query.search||'' %>" class="page-btn">Tiếp</a>
+                <% } %>
             </div>
             <% } %>
         </div>
