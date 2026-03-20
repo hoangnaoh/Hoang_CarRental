@@ -385,16 +385,35 @@ exports.getAdminCars = async (req, res) => {
         const skip  = (page - 1) * limit;
         const filter = {};
         if (status) filter.status = status;
+        // Bỏ dòng filter.status mặc định → xe rented vẫn hiện
         if (search) filter.$or = [{ name: new RegExp(search, 'i') }, { licensePlate: new RegExp(search, 'i') }];
         const total = await Car.countDocuments(filter);
         const cars  = await Car.find(filter).sort('-createdAt').skip(skip).limit(limit);
+
+        // Lấy booking active của xe rented để hiện ngày trả xe
+        const rentedIds = cars.filter(c => c.status === 'rented').map(c => c._id);
+        let carBookings = {};
+        if (rentedIds.length > 0) {
+            const activeBookings = await Booking.find({
+                car:    { $in: rentedIds },
+                status: { $in: ['confirmed', 'active'] }
+            }).select('car endDate');
+            activeBookings.forEach(b => {
+                carBookings[b.car.toString()] = b;
+            });
+        }
+
         res.render('admin/cars', {
             user: req.user, adminPage: 'cars', statusBadge,
-            cars, total, totalPages: Math.ceil(total / limit),
+            cars, carBookings, total, totalPages: Math.ceil(total / limit),
             currentPage: Number(page), limit, query: req.query
         });
     } catch (err) {
-        res.render('admin/cars', { user: req.user, adminPage: 'cars', statusBadge, cars: [], total: 0, totalPages: 1, currentPage: 1, limit: 10, query: {} });
+        res.render('admin/cars', {
+            user: req.user, adminPage: 'cars', statusBadge,
+            carBookings: {}, cars: [], total: 0, totalPages: 1,
+            currentPage: 1, limit: 10, query: {}
+        });
     }
 };
 

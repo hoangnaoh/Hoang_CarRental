@@ -60,7 +60,17 @@
                     <td><strong><%= car.name %></strong></td>
                     <td><%= car.type %> <%= car.seats %> chỗ</td>
                     <td><%= car.licensePlate %></td>
-                    <td><%- statusBadge(car.status) %></td>
+                    <% if (car.status === 'rented') {
+    const b = carBookings[car._id.toString()];
+    const returnDate = b ? new Date(b.endDate).toLocaleDateString('vi-VN') : null;
+%>
+    <span class="badge-rented">Đang thuê</span>
+    <% if (returnDate) { %>
+        <small style="color:#94a3b8; display:block;">Trả: <%= returnDate %></small>
+    <% } %>
+<% } else { %>
+    <%- statusBadge(car.status) %>
+<% } %>
                     <td>
                         <a href="/admin/cars/<%= car._id %>/edit" class="action-link edit">Sửa</a>
                         <form action="/admin/cars/<%= car._id %>?_method=DELETE" method="POST" style="display:inline"
